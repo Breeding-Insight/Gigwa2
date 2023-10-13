@@ -22,6 +22,7 @@
 var minimumProcessQueryIntervalUnit = 100;
 var maxUploadableVariantIdCount = 1000000, maxPastableVariantIdCount = 1000, maxSelectableVariantIdCount = 10000;
 var selectedVariantIDsWhenTooManyToFitInSelect = null;
+var emptyResponseCountsByProcess = [];
 
 function isHex(h) {
     var a = parseInt(h, 16);
@@ -87,27 +88,42 @@ function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
                 "Authorization": "Bearer " + token
             },
             success: function (jsonResult, textStatus, jqXHR) {
-                if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted))
-                    displayProcessProgress(nbMin, token, processId, onSuccessMethod);
-                else if (jsonResult['complete'] == true) {
+                if (jsonResult == null && (typeof processAborted == "undefined" || !processAborted)) {
+					var processKey = processId != null ? processId : token;
+					if (emptyResponseCountsByProcess[processKey] == null)
+						emptyResponseCountsByProcess[processKey] = 1;
+					else
+						emptyResponseCountsByProcess[processKey]++;
+					if (emptyResponseCountsByProcess[processKey] > 10) {
+						console.log("Giving up requesting progress for process " + processKey);
+						emptyResponseCountsByProcess[processKey] = null;
+					}
+					else
+                    	displayProcessProgress(nbMin, token, processId, onSuccessMethod);
+                }
+                else if (jsonResult != null && jsonResult['complete'] == true) {
                     if (onSuccessMethod != null)
                         onSuccessMethod(jsonResult['finalMessage']);
+                   	emptyResponseCountsByProcess[processKey] = null;
                     $('#progress').modal('hide');
                 }
-                else if (jsonResult['aborted'] == true) {
+                else if (jsonResult != null && jsonResult['aborted'] == true) {
                     if (typeof markCurrentProcessAsAborted != "undefined")
                         markCurrentProcessAsAborted();
                     else
                         processAborted = true;
+                    emptyResponseCountsByProcess[processKey] = null;
                     $('#progress').modal('hide');
                 }
                 else {
-                    if (jsonResult['error'] != null) {
+                    if (jsonResult != null && jsonResult['error'] != null) {
                         alert("Error occurred:\n\n" + jsonResult['error']);
                         $('#progress').data('error', true);
                         $('#progress').modal('hide');
+                        emptyResponseCountsByProcess[processKey] = null;
                     } else {
-                        $('#progressText').html(jsonResult.progressDescription);
+						if (jsonResult != null)
+                        	$('#progressText').html(jsonResult.progressDescription);
                         displayProcessProgress(nbMin, token, processId, onSuccessMethod);
                     }
                 }
@@ -123,6 +139,7 @@ function displayProcessProgress(nbMin, token, processId, onSuccessMethod) {
 function abort(token) {
     $('#progressText').html("Aborting...").fadeIn();
     $('#exportPanel').hide();
+    $('#progress').data('error', true);
     $.ajax({
         url: abortUrl,
         type: "DELETE",
@@ -132,7 +149,6 @@ function abort(token) {
         success: function (jsonResult) {
             if (jsonResult.processAborted === true) {
 				processAborted = true;
-	            $('#progress').data('error', true);
                 $('#progress').modal('hide');
             } else {
                 handleError(null, "unable to abort");
@@ -164,12 +180,10 @@ function handleError(xhr, thrownError) {
     }
 
     var mainMsg = null, errorMsg = null;
-    if (xhr != null && xhr.status /*DropZone returns 0 for client side errors*/> 0 && xhr.status < 500) {
-		$('div.modal').modal('hide');
+    if (xhr != null && xhr.status /*DropZone returns 0 for client side errors*/> 0 && xhr.status < 500)
         mainMsg = (xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + (xhr.responseText == "" ? thrownError : xhr.responseText);
-    }
     else {
-        mainMsg = xhr != null ? 'Request Status: ' + xhr.status  : '';
+        mainMsg = xhr != null ? 'Request Status: ' + xhr.status  : (thrownError != null ? thrownError : '');
 	    if (xhr != null && xhr.responseText != null) {
 	        try {
 	            errorMsg = (xhr.statusText == "" ? "Error " + xhr.status : xhr.statusText) + ": " + $.parseJSON(xhr.responseText)['errorMsg'];
@@ -186,6 +200,7 @@ function handleError(xhr, thrownError) {
             $(this).remove(); 
         });
     }, 5000);
+	$('div.modal').modal('hide');
 }
 
 var arrayIntersection = function(){
@@ -551,8 +566,9 @@ function handleSearchSuccess(jsonResult, pageToken) {
     headerContent += '</tr></thead>';
     for (var variant in jsonResult.variants) {
         var allele = '';
-        var knownAlleles = jsonResult.variants[variant].alternateBases
-        knownAlleles.unshift(jsonResult.variants[variant].referenceBases);
+        var knownAlleles = jsonResult.variants[variant].alternateBases;
+        if (knownAlleles.length > 0 || jsonResult.variants[variant].referenceBases != "")	// the DTO used here requires a reference allele to be provided: the chosen convention is to provide a single allele coded as an empty string when no allele is known for a variant
+        	knownAlleles.unshift(jsonResult.variants[variant].referenceBases);
         for (var all in jsonResult.variants[variant].alternateBases) {
             allele += '<div class="allele">' + (jsonResult.variants[variant].alternateBases[all] == "" ? "&nbsp;" : jsonResult.variants[variant].alternateBases[all]) + '</div>';
         }
@@ -595,7 +611,7 @@ function handleSearchSuccess(jsonResult, pageToken) {
             if (count === 0) {
                 $('#currentPage').html("no results");
                 $('#next').prop('disabled', true);
-                $('#showdensity').hide();
+                $('#showCharts').hide();
                 $('#showIGV').hide();
                 $('#exportBoxToggleButton').hide();
             } else {
@@ -671,46 +687,65 @@ function applyGenomeBrowserURL() {
 }
 
 function markInconsistentGenotypesAsMissing() {
-    var nRunCount = $("table.genotypeTable").length;
-    if (nRunCount < 2)
-        return; // nothing to compare
+	var multiSampleIndividuals = new Set();
+	var displayedIndividuals = new Set();
+	$('table.genotypeTable tr th:first-child').map(function() {
+	    var indName = $(this).text();
+	    if (indName != "Individual") {
+		    if (displayedIndividuals.has(indName))
+		    	multiSampleIndividuals.add(indName);
+		    displayedIndividuals.add(indName);
+		}
+	});
+	
+	if (multiSampleIndividuals.size == 0)
+		return; // no multi-sample individuals displayed
 
-    var indivGenotypes = new Array();
-    var tableCounter = 0;
-    $("table.genotypeTable").each(function() {
-        $(this).find("tr:gt(0)").each(function() {
-            var individual = $(this).find("th").text();
-            var genotypes = indivGenotypes[individual];
-            if (genotypes == null)
-                genotypes = new Array();
+	multiSampleIndividuals.forEach(function(ind) {
+		var indGTs = $("table.genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).map(function() {
+			return $(this).find("td:eq(0)").text();
+		}).get();
 
-			var genotype = $(this).find("td:eq(0)").html().trim();
-			if (genotype != '' && !genotypes.includes(genotype))
-				genotypes.push(genotype);
-			indivGenotypes[individual] = genotypes;
+		if (indGTs.size < 2)
+			return;
 
-            if (tableCounter == nRunCount - 1 && Object.keys(genotypes).length > 1)
-                markAsMissingData(individual);
-        });
-        tableCounter++;
+		var correctIndGT = mostFrequentString(indGTs);
+		$("table.genotypeTable tr.ind_" + ind.replaceAll(" ", "_")).each(function() {
+			var gtCell = $(this).find("td:eq(0)");
+			if (gtCell.text() != "" && gtCell.text() != correctIndGT) {
+	            gtCell.addClass("missingData");
+			}
+		});
     });
 }
 
-function markAsMissingData(individual) {
-    $("table.genotypeTable").each(function() {
-        $(this).find("tr:gt(0)").each(function() {
-            if ($.trim($(this).find("th").text()) == individual) {
-                $(this).find("td:eq(0)").addClass("missingData");
-                $("div#missingDataLegend").show();
-            }
-        });
-    });
-}
+const mostFrequentString = strings => {
+  const validStrings = strings.filter(str => str.trim() !== '');
+
+  if (validStrings.length === 0)
+    return '';
+
+  const stringCount = {};
+  let mostRepresented = null, maxCount = 0, multipleMaxCount = false;
+
+  validStrings.forEach(str => {
+    stringCount[str] = (stringCount[str] || 0) + 1;
+    if (stringCount[str] > maxCount) {
+      mostRepresented = str;
+      maxCount = stringCount[str];
+      multipleMaxCount = false;
+    } else if (stringCount[str] === maxCount)
+      multipleMaxCount = true;
+  });
+
+  return multipleMaxCount ? null : mostRepresented;
+};
+
 
 function getSelectedIndividuals(groupNumber, provideGa4ghId) {
 	const selectedIndividuals = new Set();
 	const groups = groupNumber == null ? [1, 2] : [groupNumber];
-	const ga4ghId = getProjectId() + "§";
+	const ga4ghId = getProjectId() + idSep;
 	for (let groupKey in groups)
 	{
 	    const groupIndex = groups[groupKey];
@@ -814,6 +849,8 @@ function setGenotypeInvestigationMode(mode) {
 		
 		if (mode == 0)
 		{
+			dropTempColl(false);
+
 			$('#Individuals1').selectmultiple('deselectAll');
 			$('#Genotypes1').selectpicker('deselectAll');
 			$('#minMissingData1').val("0");
@@ -872,11 +909,9 @@ function applyGroupMemorizing(groupNumber, rememberedSelection) {
     var variableName = "groupMemorizer" + groupNumber + "::" + $('#module').val() + "::" + $('#project').val();
     var groupMemorizer = $("button#groupMemorizer" + groupNumber);
     var active = groupMemorizer.hasClass('active');
-    if (active)
-    {
-        var variableValue = localStorage.getItem(variableName);
+    if (active) {
         if (rememberedSelection != null)
-            $('#Individuals' + groupNumber).selectmultiple('batchSelect', [rememberedSelection]);
+            $('#Individuals' + groupNumber).selectmultiple('batchSelect', [rememberedSelection, false]);
         else
             localStorage.setItem(variableName, JSON.stringify(getSelectedIndividuals(groupNumber)));
     }
@@ -1104,7 +1139,7 @@ function onPasteIndividuals(groupNumber, textarea) {
     textarea.val().split("\n").map(id => id.trim()).filter(id => id.length > 0).forEach(function (ind) {
         cleanSelectionArray.push(ind);
     });
-    $('#Individuals' + groupNumber).selectmultiple('batchSelect', [cleanSelectionArray]);
+    $('#Individuals' + groupNumber).selectmultiple('batchSelect', [cleanSelectionArray, true]);
     applyGroupMemorizing(groupNumber);
     checkGroupOverlap();
     $("button#pasteIndividuals" + groupNumber).click();
@@ -1196,10 +1231,72 @@ function checkGroupOverlap() {
 	$('#overlapWarning').toggle($("#discriminate").prop('checked') && areGroupsOverlapping());
 }
 
+function sendToGalaxy(archivedDataFiles) {
+	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim(), apiKey = sessionStorage.getItem("galaxyApiKey::" + galaxyInstanceUrl);
+	if (apiKey == null)
+		apiKey = prompt("Enter the API key tied to your account on\n" + galaxyInstanceUrl);
+	if (apiKey != null && apiKey.trim() != "") {
+		sessionStorage.setItem("galaxyApiKey::" + galaxyInstanceUrl, apiKey);
+		$('#progressText').html("Pushing files to " + galaxyInstanceUrl + " ...");
+		$('#asyncProgressButton').hide();
+		$('button#abort').hide();
+		$('#progress').modal({
+			backdrop: 'static',
+			keyboard: false,
+			show: true
+		});
+		setTimeout(function() {
+			var n = 0, responseMsg = null;
+			for (var fileUrl in archivedDataFiles)
+				$.ajax({
+					async: false,
+					url: galaxyPushURL + "?galaxyUrl=" + galaxyInstanceUrl + "&galaxyApiKey=" + apiKey + "&fileUrl=" + archivedDataFiles[fileUrl],
+					type: "GET",
+					success: function(respString) {
+						responseMsg = respString;
+						n++;
+					},
+					error: function(xhr, ajaxOptions, thrownError) {
+						$('#progress').modal('hide');
+						
+						if (xhr.status == 403) {
+							console.log("Removing invalid Galaxy API key: " + apiKey);
+							sessionStorage.removeItem("galaxyApiKey::" + galaxyInstanceUrl);
+						}
+						
+						if (thrownError == "" && xhr.getAllResponseHeaders() == '')
+							alert("Error accessing resource: " + genomeURL);
+						else
+							handleError(xhr, thrownError);
+					}
+				});
+			if (n > 0)
+				if (confirm(n + " file(s) " + responseMsg + "\nOpen a window pointing to that Galaxy instance?"))
+					window.open(galaxyInstanceUrl);
+			$('#progress').modal('hide');
+		}, 1);
+	}
+}
+
 function getOutputToolConfig(toolName)
 {
     var storedToolConfig = localStorage.getItem("outputTool_" + toolName);
     return storedToolConfig != null ? JSON.parse(storedToolConfig) : onlineOutputTools[toolName];
+}
+
+function applyOutputToolConfig(t) {
+	if ($("input#outputToolURL").val().trim() == "") {
+		localStorage.removeItem("outputTool_" + $("#onlineOutputTools").val());
+		configureSelectedExternalTool();
+	} else
+		localStorage.setItem("outputTool_" + $("#onlineOutputTools").val(), JSON.stringify({"url" : $("input#outputToolURL").val(), "formats" : $("input#outputToolFormats").val()}));
+
+	if ($("input#galaxyInstanceURL").val().trim() == "")
+		localStorage.removeItem("galaxyInstanceURL");
+	else
+		localStorage.setItem("galaxyInstanceURL", $("input#galaxyInstanceURL").val());
+
+	$("#applyOutputToolConfig").prop("disabled", "disabled");
 }
 
 function configureSelectedExternalTool() {
@@ -1212,6 +1309,71 @@ function configureSelectedExternalTool() {
 function checkIfOuputToolConfigChanged() {
     var changed = $('#outputToolFormats').val() != $('#outputToolFormats').prop('previousVal') || $('#outputToolURL').val() != $('#outputToolURL').prop('previousVal');
     $("#applyOutputToolConfig").prop('disabled', changed ? false : 'disabled');
+}
+
+function showServerExportBox()
+{
+	$("div#exportPanel").hide();
+	$("a#exportBoxToggleButton").removeClass("active");
+	if (processAborted || downloadURL == null)
+		return;
+
+	var fileName = downloadURL.substring(downloadURL.lastIndexOf("/") + 1);
+	$('#serverExportBox').html('<button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:right;" onclick="$(\'#serverExportBox\').hide();">x&nbsp;</button></button>&nbsp;Export file will be available at this URL for 48h:<br/><a id="exportOutputUrl" download href="' + downloadURL + '">' + fileName + '</a> ').show();
+	var exportedFormat = $('#exportFormat').val().toUpperCase();
+	if ("VCF" == exportedFormat)
+		addIgvExportIfRunning();
+	else if ("FLAPJACK" == exportedFormat)
+		addFjBytesExport();
+
+	var archivedDataFiles = new Array(), exportFormatExtensions = $("#exportFormat option:selected").data('ext').split(";");
+	if ($('#exportPanel input#exportedIndividualMetadataCheckBox').is(':checked') && "FLAPJACK" != exportedFormat && "DARWIN" != exportedFormat /* these two already have their own metadata file format*/)
+		exportFormatExtensions.push("tsv");
+	for (var key in exportFormatExtensions)
+		archivedDataFiles[exportFormatExtensions[key]] = location.origin + downloadURL.replace(new RegExp(/\.[^.]*$/), '.' + exportFormatExtensions[key]);
+	
+	var galaxyInstanceUrl = $("#galaxyInstanceURL").val().trim();
+	if (galaxyInstanceUrl.startsWith("http")) {
+		var fileURLs = "";
+		for (key in archivedDataFiles)
+			fileURLs += (fileURLs == "" ? "" : " ,") + "'" + archivedDataFiles[key] + "'";
+		$('#serverExportBox').append('<br/><br/>&nbsp;<input type="button" value="Send exported data to Galaxy" onclick="sendToGalaxy([' + fileURLs + ']);" />&nbsp;');			
+	}
+
+	if (onlineOutputTools != null)
+		for (var toolName in onlineOutputTools) {
+			var toolConfig = getOutputToolConfig(toolName);
+			if (toolConfig['url'] != null && toolConfig['url'].trim() != "" && (toolConfig['formats'] == null || toolConfig['formats'].trim() == "" || toolConfig['formats'].toUpperCase().split(",").includes($('#exportFormat').val().toUpperCase()))) {		
+
+				var formatsForThisButton = "", urlForThisButton = toolConfig['url'];
+				var matchResult = urlForThisButton.match(/{([^}]+)}/g);
+				if (matchResult != null) {
+					var placeHolders = matchResult.map(res => res.replace(/{|}/g , ''));
+					phLoop: for (var i in placeHolders) {
+						var phFormats = placeHolders[i].split("\|");
+						for (var j in phFormats) {
+							for (var key in archivedDataFiles) {
+								if (key == phFormats[j]) {
+									formatsForThisButton += (formatsForThisButton == "" ? "" : ", ") + key;
+									urlForThisButton = urlForThisButton.replace("\{" + placeHolders[i] + "\}", archivedDataFiles[key]);
+									continue phLoop;
+								}
+							}
+						}
+						console.log("unused param: " + placeHolders[i]);
+						urlForThisButton = urlForThisButton.replace("\{" + placeHolders[i] + "\}", "");
+					}
+				}
+				
+				if (urlForThisButton == toolConfig['url'] && urlForThisButton.indexOf("*") != -1) {
+					urlForThisButton = urlForThisButton.replace("\*", Object.values(archivedDataFiles).join(","));
+					formatsForThisButton = Object.keys(archivedDataFiles).join(", ");
+				}
+
+				if (formatsForThisButton != "")
+					$('#serverExportBox').append('<br/><br/>&nbsp;<input type="button" value="Send ' + formatsForThisButton + ' file(s) to ' + toolName + '" onclick="window.open(\'' + urlForThisButton + '\');" />&nbsp;')
+			}
+		}
 }
 
 var StringBuffer = function() {
@@ -1517,7 +1679,7 @@ function listQueries(){
                           var tabIds = jsonResult['callSetIds'+e];
                           if(tabIds.length != 0) {
                             $('#Individuals'+i+' div select').val(tabIds.map(function(x) {
-                                return x.split("§")[2];
+                                return x.split(idSep)[2];
                             }));
                             $('#Individuals'+i+' div select').trigger('change');
                           }
@@ -1578,12 +1740,13 @@ function listQueries(){
 
 function onFilterByIds(checked) {
     if (checked) {
+        localStorage.setItem($('#module').val() + idSep + $('#project').val() + '_filterByIds', true);
         $('#variantTypes').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
         
         $('#numberOfAlleles').prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
 
         $('#Sequences').selectmultiple('selectAll');
-        $('#Sequences').find('.btn').prop('disabled', true);
+        $('#Sequences').find('.btn').prop('disabled', true).selectpicker('refresh');
         
         $('#minposition').val("").prop('disabled', true); 
         $('#maxposition').val("").prop('disabled', true);
@@ -1602,10 +1765,11 @@ function onFilterByIds(checked) {
 	        $('#maxHeZ' + nGroup).val(100).prop('disabled', true);
 	        $('#mostSameRatio' + nGroup).prop('disabled', true);
 	        $('#Genotypes' + nGroup).prop('disabled', true).selectpicker('deselectAll').selectpicker('refresh');
-		    $('#minMaf' + nGroup).prop('disabled', "disabled");
-		    $('#maxMaf' + nGroup).prop('disabled', "disabled");
+		    $('#minMaf' + nGroup).val(0).prop('disabled', true);
+		    $('#maxMaf' + nGroup).val(50).prop('disabled', true);
 		}
     } else {
+        localStorage.removeItem($('#module').val() + idSep + $('#project').val() + '_filterByIds');
 		selectedVariantIDsWhenTooManyToFitInSelect = null;
 	
         $('#variantTypes').prop('disabled', false).selectpicker('refresh');
@@ -1625,11 +1789,9 @@ function onFilterByIds(checked) {
                 
         for (var nGroup=1; nGroup<=2; nGroup++) {
 	        $('#minMissingData' + nGroup).prop('disabled', false);
-	        $('#minMissingData' + nGroup).val(0);
 	        $('#maxMissingData' + nGroup).prop('disabled', false);
-	        $('#maxMissingData' + nGroup).val(100);
+	        $('#minHeZ' + nGroup).prop('disabled', false);
 	        $('#maxHeZ' + nGroup).prop('disabled', false);
-	        $('#maxHeZ' + nGroup).val(100);
 	        $('#mostSameRatio' + nGroup).prop('disabled', false);
 	        $('#Genotypes' + nGroup).prop('disabled', false).selectpicker('refresh');        
 		    $('#minMaf' + nGroup).prop('disabled', false);
@@ -1678,16 +1840,11 @@ function onVariantIdsSelect() {
     }
 }
 
-function readFile(file, func) {
-  var allText, rawFile = new XMLHttpRequest();
-  rawFile.open("GET", file, false);
-  rawFile.onreadystatechange = function () {
-      if(rawFile.readyState === 4)
-          if(rawFile.status === 200 || rawFile.status == 0)
-              allText = rawFile.responseText;
-              if(func!=undefined && typeof(func) == "function"){
-                  func(allText);
-              }
-  };
-  rawFile.send();
+function buildHeader(token, assemblyId, individuals) {
+    var headers = { "Authorization": "Bearer " + token };
+    if (assemblyId != null)
+    	headers["assembly"] = assemblyId;
+    if (individuals != null)
+    	headers["ind"] = individuals;
+	return headers;
 }

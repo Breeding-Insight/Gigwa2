@@ -1,17 +1,35 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
-  (global = global || self, global.GenotypeRenderer = factory());
-}(this, (function () { 'use strict';
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.GenotypeRenderer = factory());
+})(this, (function () { 'use strict';
 
-  function _typeof(obj) {
-    "@babel/helpers - typeof";
-
-    return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) {
-      return typeof obj;
-    } : function (obj) {
-      return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    }, _typeof(obj);
+  function _iterableToArrayLimit(r, l) {
+    var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
+    if (null != t) {
+      var e,
+        n,
+        i,
+        u,
+        a = [],
+        f = !0,
+        o = !1;
+      try {
+        if (i = (t = t.call(r)).next, 0 === l) {
+          if (Object(t) !== t) return;
+          f = !1;
+        } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0);
+      } catch (r) {
+        o = !0, n = r;
+      } finally {
+        try {
+          if (!f && null != t.return && (u = t.return(), Object(u) !== u)) return;
+        } finally {
+          if (o) throw n;
+        }
+      }
+      return a;
+    }
   }
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -24,7 +42,7 @@
       descriptor.enumerable = descriptor.enumerable || false;
       descriptor.configurable = true;
       if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, descriptor.key, descriptor);
+      Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor);
     }
   }
   function _createClass(Constructor, protoProps, staticProps) {
@@ -49,30 +67,6 @@
   }
   function _iterableToArray(iter) {
     if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
-  }
-  function _iterableToArrayLimit(arr, i) {
-    var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"];
-    if (_i == null) return;
-    var _arr = [];
-    var _n = true;
-    var _d = false;
-    var _s, _e;
-    try {
-      for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) {
-        _arr.push(_s.value);
-        if (i && _arr.length === i) break;
-      }
-    } catch (err) {
-      _d = true;
-      _e = err;
-    } finally {
-      try {
-        if (!_n && _i["return"] != null) _i["return"]();
-      } finally {
-        if (_d) throw _e;
-      }
-    }
-    return _arr;
   }
   function _unsupportedIterableToArray(o, minLen) {
     if (!o) return;
@@ -144,83 +138,106 @@
       }
     };
   }
-
-  function bind(fn, thisArg) {
-    return function wrap() {
-      return fn.apply(thisArg, arguments);
-    };
+  function _toPrimitive(input, hint) {
+    if (typeof input !== "object" || input === null) return input;
+    var prim = input[Symbol.toPrimitive];
+    if (prim !== undefined) {
+      var res = prim.call(input, hint || "default");
+      if (typeof res !== "object") return res;
+      throw new TypeError("@@toPrimitive must return a primitive value.");
+    }
+    return (hint === "string" ? String : Number)(input);
   }
+  function _toPropertyKey(arg) {
+    var key = _toPrimitive(arg, "string");
+    return typeof key === "symbol" ? key : String(key);
+  }
+
+  function getDefaultExportFromCjs (x) {
+  	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
+  }
+
+  var axios$3 = {exports: {}};
+
+  var bind$2 = function bind(fn, thisArg) {
+    return function wrap() {
+      var args = new Array(arguments.length);
+      for (var i = 0; i < args.length; i++) {
+        args[i] = arguments[i];
+      }
+      return fn.apply(thisArg, args);
+    };
+  };
+
+  var bind$1 = bind$2;
 
   // utils is a library of generic helper functions non-specific to axios
 
-  const {toString} = Object.prototype;
-  const {getPrototypeOf} = Object;
-
-  const kindOf = (cache => thing => {
-      const str = toString.call(thing);
-      return cache[str] || (cache[str] = str.slice(8, -1).toLowerCase());
-  })(Object.create(null));
-
-  const kindOfTest = (type) => {
-    type = type.toLowerCase();
-    return (thing) => kindOf(thing) === type
-  };
-
-  const typeOfTest = type => thing => typeof thing === type;
+  var toString = Object.prototype.toString;
 
   /**
    * Determine if a value is an Array
    *
    * @param {Object} val The value to test
-   *
    * @returns {boolean} True if value is an Array, otherwise false
    */
-  const {isArray} = Array;
+  function isArray(val) {
+    return toString.call(val) === '[object Array]';
+  }
 
   /**
    * Determine if a value is undefined
    *
-   * @param {*} val The value to test
-   *
+   * @param {Object} val The value to test
    * @returns {boolean} True if the value is undefined, otherwise false
    */
-  const isUndefined = typeOfTest('undefined');
+  function isUndefined(val) {
+    return typeof val === 'undefined';
+  }
 
   /**
    * Determine if a value is a Buffer
    *
-   * @param {*} val The value to test
-   *
+   * @param {Object} val The value to test
    * @returns {boolean} True if value is a Buffer, otherwise false
    */
   function isBuffer(val) {
     return val !== null && !isUndefined(val) && val.constructor !== null && !isUndefined(val.constructor)
-      && isFunction(val.constructor.isBuffer) && val.constructor.isBuffer(val);
+      && typeof val.constructor.isBuffer === 'function' && val.constructor.isBuffer(val);
   }
 
   /**
    * Determine if a value is an ArrayBuffer
    *
-   * @param {*} val The value to test
-   *
+   * @param {Object} val The value to test
    * @returns {boolean} True if value is an ArrayBuffer, otherwise false
    */
-  const isArrayBuffer = kindOfTest('ArrayBuffer');
+  function isArrayBuffer(val) {
+    return toString.call(val) === '[object ArrayBuffer]';
+  }
 
+  /**
+   * Determine if a value is a FormData
+   *
+   * @param {Object} val The value to test
+   * @returns {boolean} True if value is an FormData, otherwise false
+   */
+  function isFormData(val) {
+    return (typeof FormData !== 'undefined') && (val instanceof FormData);
+  }
 
   /**
    * Determine if a value is a view on an ArrayBuffer
    *
-   * @param {*} val The value to test
-   *
+   * @param {Object} val The value to test
    * @returns {boolean} True if value is a view on an ArrayBuffer, otherwise false
    */
   function isArrayBufferView(val) {
-    let result;
+    var result;
     if ((typeof ArrayBuffer !== 'undefined') && (ArrayBuffer.isView)) {
       result = ArrayBuffer.isView(val);
     } else {
-      result = (val) && (val.buffer) && (isArrayBuffer(val.buffer));
+      result = (val) && (val.buffer) && (val.buffer instanceof ArrayBuffer);
     }
     return result;
   }
@@ -228,141 +245,144 @@
   /**
    * Determine if a value is a String
    *
-   * @param {*} val The value to test
-   *
+   * @param {Object} val The value to test
    * @returns {boolean} True if value is a String, otherwise false
    */
-  const isString = typeOfTest('string');
-
-  /**
-   * Determine if a value is a Function
-   *
-   * @param {*} val The value to test
-   * @returns {boolean} True if value is a Function, otherwise false
-   */
-  const isFunction = typeOfTest('function');
+  function isString(val) {
+    return typeof val === 'string';
+  }
 
   /**
    * Determine if a value is a Number
    *
-   * @param {*} val The value to test
-   *
+   * @param {Object} val The value to test
    * @returns {boolean} True if value is a Number, otherwise false
    */
-  const isNumber = typeOfTest('number');
+  function isNumber(val) {
+    return typeof val === 'number';
+  }
 
   /**
    * Determine if a value is an Object
    *
-   * @param {*} thing The value to test
-   *
+   * @param {Object} val The value to test
    * @returns {boolean} True if value is an Object, otherwise false
    */
-  const isObject = (thing) => thing !== null && typeof thing === 'object';
-
-  /**
-   * Determine if a value is a Boolean
-   *
-   * @param {*} thing The value to test
-   * @returns {boolean} True if value is a Boolean, otherwise false
-   */
-  const isBoolean = thing => thing === true || thing === false;
+  function isObject(val) {
+    return val !== null && typeof val === 'object';
+  }
 
   /**
    * Determine if a value is a plain Object
    *
-   * @param {*} val The value to test
-   *
-   * @returns {boolean} True if value is a plain Object, otherwise false
+   * @param {Object} val The value to test
+   * @return {boolean} True if value is a plain Object, otherwise false
    */
-  const isPlainObject = (val) => {
-    if (kindOf(val) !== 'object') {
+  function isPlainObject(val) {
+    if (toString.call(val) !== '[object Object]') {
       return false;
     }
 
-    const prototype = getPrototypeOf(val);
-    return (prototype === null || prototype === Object.prototype || Object.getPrototypeOf(prototype) === null) && !(Symbol.toStringTag in val) && !(Symbol.iterator in val);
-  };
+    var prototype = Object.getPrototypeOf(val);
+    return prototype === null || prototype === Object.prototype;
+  }
 
   /**
    * Determine if a value is a Date
    *
-   * @param {*} val The value to test
-   *
+   * @param {Object} val The value to test
    * @returns {boolean} True if value is a Date, otherwise false
    */
-  const isDate = kindOfTest('Date');
+  function isDate(val) {
+    return toString.call(val) === '[object Date]';
+  }
 
   /**
    * Determine if a value is a File
    *
-   * @param {*} val The value to test
-   *
+   * @param {Object} val The value to test
    * @returns {boolean} True if value is a File, otherwise false
    */
-  const isFile = kindOfTest('File');
+  function isFile(val) {
+    return toString.call(val) === '[object File]';
+  }
 
   /**
    * Determine if a value is a Blob
    *
-   * @param {*} val The value to test
-   *
+   * @param {Object} val The value to test
    * @returns {boolean} True if value is a Blob, otherwise false
    */
-  const isBlob = kindOfTest('Blob');
+  function isBlob(val) {
+    return toString.call(val) === '[object Blob]';
+  }
 
   /**
-   * Determine if a value is a FileList
+   * Determine if a value is a Function
    *
-   * @param {*} val The value to test
-   *
-   * @returns {boolean} True if value is a File, otherwise false
+   * @param {Object} val The value to test
+   * @returns {boolean} True if value is a Function, otherwise false
    */
-  const isFileList = kindOfTest('FileList');
+  function isFunction(val) {
+    return toString.call(val) === '[object Function]';
+  }
 
   /**
    * Determine if a value is a Stream
    *
-   * @param {*} val The value to test
-   *
+   * @param {Object} val The value to test
    * @returns {boolean} True if value is a Stream, otherwise false
    */
-  const isStream = (val) => isObject(val) && isFunction(val.pipe);
-
-  /**
-   * Determine if a value is a FormData
-   *
-   * @param {*} thing The value to test
-   *
-   * @returns {boolean} True if value is an FormData, otherwise false
-   */
-  const isFormData = (thing) => {
-    const pattern = '[object FormData]';
-    return thing && (
-      (typeof FormData === 'function' && thing instanceof FormData) ||
-      toString.call(thing) === pattern ||
-      (isFunction(thing.toString) && thing.toString() === pattern)
-    );
-  };
+  function isStream(val) {
+    return isObject(val) && isFunction(val.pipe);
+  }
 
   /**
    * Determine if a value is a URLSearchParams object
    *
-   * @param {*} val The value to test
-   *
+   * @param {Object} val The value to test
    * @returns {boolean} True if value is a URLSearchParams object, otherwise false
    */
-  const isURLSearchParams = kindOfTest('URLSearchParams');
+  function isURLSearchParams(val) {
+    return typeof URLSearchParams !== 'undefined' && val instanceof URLSearchParams;
+  }
 
   /**
    * Trim excess whitespace off the beginning and end of a string
    *
    * @param {String} str The String to trim
-   *
    * @returns {String} The String freed of excess whitespace
    */
-  const trim = (str) => str.trim ?
-    str.trim() : str.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+  function trim(str) {
+    return str.trim ? str.trim() : str.replace(/^\s+|\s+$/g, '');
+  }
+
+  /**
+   * Determine if we're running in a standard browser environment
+   *
+   * This allows axios to run in a web worker, and react-native.
+   * Both environments support XMLHttpRequest, but not fully standard globals.
+   *
+   * web workers:
+   *  typeof window -> undefined
+   *  typeof document -> undefined
+   *
+   * react-native:
+   *  navigator.product -> 'ReactNative'
+   * nativescript
+   *  navigator.product -> 'NativeScript' or 'NS'
+   */
+  function isStandardBrowserEnv() {
+    if (typeof navigator !== 'undefined' && (navigator.product === 'ReactNative' ||
+                                             navigator.product === 'NativeScript' ||
+                                             navigator.product === 'NS')) {
+      return false;
+    }
+    return (
+      typeof window !== 'undefined' &&
+      typeof document !== 'undefined'
+    );
+  }
 
   /**
    * Iterate over an Array or an Object invoking a function for each item.
@@ -375,18 +395,12 @@
    *
    * @param {Object|Array} obj The object to iterate
    * @param {Function} fn The callback to invoke for each item
-   *
-   * @param {Boolean} [allOwnKeys = false]
-   * @returns {void}
    */
-  function forEach(obj, fn, {allOwnKeys = false} = {}) {
+  function forEach(obj, fn) {
     // Don't bother if no value provided
     if (obj === null || typeof obj === 'undefined') {
       return;
     }
-
-    let i;
-    let l;
 
     // Force an array if not already something iterable
     if (typeof obj !== 'object') {
@@ -396,18 +410,15 @@
 
     if (isArray(obj)) {
       // Iterate over array values
-      for (i = 0, l = obj.length; i < l; i++) {
+      for (var i = 0, l = obj.length; i < l; i++) {
         fn.call(null, obj[i], i, obj);
       }
     } else {
       // Iterate over object keys
-      const keys = allOwnKeys ? Object.getOwnPropertyNames(obj) : Object.keys(obj);
-      const len = keys.length;
-      let key;
-
-      for (i = 0; i < len; i++) {
-        key = keys[i];
-        fn.call(null, obj[key], key, obj);
+      for (var key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          fn.call(null, obj[key], key, obj);
+        }
       }
     }
   }
@@ -427,12 +438,11 @@
    * ```
    *
    * @param {Object} obj1 Object to merge
-   *
    * @returns {Object} Result of all merge properties
    */
   function merge(/* obj1, obj2, obj3, ... */) {
-    const result = {};
-    const assignValue = (val, key) => {
+    var result = {};
+    function assignValue(val, key) {
       if (isPlainObject(result[key]) && isPlainObject(val)) {
         result[key] = merge(result[key], val);
       } else if (isPlainObject(val)) {
@@ -442,10 +452,10 @@
       } else {
         result[key] = val;
       }
-    };
+    }
 
-    for (let i = 0, l = arguments.length; i < l; i++) {
-      arguments[i] && forEach(arguments[i], assignValue);
+    for (var i = 0, l = arguments.length; i < l; i++) {
+      forEach(arguments[i], assignValue);
     }
     return result;
   }
@@ -456,341 +466,211 @@
    * @param {Object} a The object to be extended
    * @param {Object} b The object to copy properties from
    * @param {Object} thisArg The object to bind function to
-   *
-   * @param {Boolean} [allOwnKeys]
-   * @returns {Object} The resulting value of object a
+   * @return {Object} The resulting value of object a
    */
-  const extend = (a, b, thisArg, {allOwnKeys}= {}) => {
-    forEach(b, (val, key) => {
-      if (thisArg && isFunction(val)) {
-        a[key] = bind(val, thisArg);
+  function extend(a, b, thisArg) {
+    forEach(b, function assignValue(val, key) {
+      if (thisArg && typeof val === 'function') {
+        a[key] = bind$1(val, thisArg);
       } else {
         a[key] = val;
       }
-    }, {allOwnKeys});
+    });
     return a;
-  };
+  }
 
   /**
    * Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
    *
    * @param {string} content with BOM
-   *
-   * @returns {string} content value without BOM
+   * @return {string} content value without BOM
    */
-  const stripBOM = (content) => {
+  function stripBOM(content) {
     if (content.charCodeAt(0) === 0xFEFF) {
       content = content.slice(1);
     }
     return content;
-  };
-
-  /**
-   * Inherit the prototype methods from one constructor into another
-   * @param {function} constructor
-   * @param {function} superConstructor
-   * @param {object} [props]
-   * @param {object} [descriptors]
-   *
-   * @returns {void}
-   */
-  const inherits = (constructor, superConstructor, props, descriptors) => {
-    constructor.prototype = Object.create(superConstructor.prototype, descriptors);
-    constructor.prototype.constructor = constructor;
-    Object.defineProperty(constructor, 'super', {
-      value: superConstructor.prototype
-    });
-    props && Object.assign(constructor.prototype, props);
-  };
-
-  /**
-   * Resolve object with deep prototype chain to a flat object
-   * @param {Object} sourceObj source object
-   * @param {Object} [destObj]
-   * @param {Function|Boolean} [filter]
-   * @param {Function} [propFilter]
-   *
-   * @returns {Object}
-   */
-  const toFlatObject = (sourceObj, destObj, filter, propFilter) => {
-    let props;
-    let i;
-    let prop;
-    const merged = {};
-
-    destObj = destObj || {};
-    // eslint-disable-next-line no-eq-null,eqeqeq
-    if (sourceObj == null) return destObj;
-
-    do {
-      props = Object.getOwnPropertyNames(sourceObj);
-      i = props.length;
-      while (i-- > 0) {
-        prop = props[i];
-        if ((!propFilter || propFilter(prop, sourceObj, destObj)) && !merged[prop]) {
-          destObj[prop] = sourceObj[prop];
-          merged[prop] = true;
-        }
-      }
-      sourceObj = filter !== false && getPrototypeOf(sourceObj);
-    } while (sourceObj && (!filter || filter(sourceObj, destObj)) && sourceObj !== Object.prototype);
-
-    return destObj;
-  };
-
-  /**
-   * Determines whether a string ends with the characters of a specified string
-   *
-   * @param {String} str
-   * @param {String} searchString
-   * @param {Number} [position= 0]
-   *
-   * @returns {boolean}
-   */
-  const endsWith = (str, searchString, position) => {
-    str = String(str);
-    if (position === undefined || position > str.length) {
-      position = str.length;
-    }
-    position -= searchString.length;
-    const lastIndex = str.indexOf(searchString, position);
-    return lastIndex !== -1 && lastIndex === position;
-  };
-
-
-  /**
-   * Returns new array from array like object or null if failed
-   *
-   * @param {*} [thing]
-   *
-   * @returns {?Array}
-   */
-  const toArray = (thing) => {
-    if (!thing) return null;
-    if (isArray(thing)) return thing;
-    let i = thing.length;
-    if (!isNumber(i)) return null;
-    const arr = new Array(i);
-    while (i-- > 0) {
-      arr[i] = thing[i];
-    }
-    return arr;
-  };
-
-  /**
-   * Checking if the Uint8Array exists and if it does, it returns a function that checks if the
-   * thing passed in is an instance of Uint8Array
-   *
-   * @param {TypedArray}
-   *
-   * @returns {Array}
-   */
-  // eslint-disable-next-line func-names
-  const isTypedArray = (TypedArray => {
-    // eslint-disable-next-line func-names
-    return thing => {
-      return TypedArray && thing instanceof TypedArray;
-    };
-  })(typeof Uint8Array !== 'undefined' && getPrototypeOf(Uint8Array));
-
-  /**
-   * For each entry in the object, call the function with the key and value.
-   *
-   * @param {Object<any, any>} obj - The object to iterate over.
-   * @param {Function} fn - The function to call for each entry.
-   *
-   * @returns {void}
-   */
-  const forEachEntry = (obj, fn) => {
-    const generator = obj && obj[Symbol.iterator];
-
-    const iterator = generator.call(obj);
-
-    let result;
-
-    while ((result = iterator.next()) && !result.done) {
-      const pair = result.value;
-      fn.call(obj, pair[0], pair[1]);
-    }
-  };
-
-  /**
-   * It takes a regular expression and a string, and returns an array of all the matches
-   *
-   * @param {string} regExp - The regular expression to match against.
-   * @param {string} str - The string to search.
-   *
-   * @returns {Array<boolean>}
-   */
-  const matchAll = (regExp, str) => {
-    let matches;
-    const arr = [];
-
-    while ((matches = regExp.exec(str)) !== null) {
-      arr.push(matches);
-    }
-
-    return arr;
-  };
-
-  /* Checking if the kindOfTest function returns true when passed an HTMLFormElement. */
-  const isHTMLForm = kindOfTest('HTMLFormElement');
-
-  const toCamelCase = str => {
-    return str.toLowerCase().replace(/[_-\s]([a-z\d])(\w*)/g,
-      function replacer(m, p1, p2) {
-        return p1.toUpperCase() + p2;
-      }
-    );
-  };
-
-  /* Creating a function that will check if an object has a property. */
-  const hasOwnProperty = (({hasOwnProperty}) => (obj, prop) => hasOwnProperty.call(obj, prop))(Object.prototype);
-
-  /**
-   * Determine if a value is a RegExp object
-   *
-   * @param {*} val The value to test
-   *
-   * @returns {boolean} True if value is a RegExp object, otherwise false
-   */
-  const isRegExp = kindOfTest('RegExp');
-
-  const reduceDescriptors = (obj, reducer) => {
-    const descriptors = Object.getOwnPropertyDescriptors(obj);
-    const reducedDescriptors = {};
-
-    forEach(descriptors, (descriptor, name) => {
-      if (reducer(descriptor, name, obj) !== false) {
-        reducedDescriptors[name] = descriptor;
-      }
-    });
-
-    Object.defineProperties(obj, reducedDescriptors);
-  };
-
-  /**
-   * Makes all methods read-only
-   * @param {Object} obj
-   */
-
-  const freezeMethods = (obj) => {
-    reduceDescriptors(obj, (descriptor, name) => {
-      const value = obj[name];
-
-      if (!isFunction(value)) return;
-
-      descriptor.enumerable = false;
-
-      if ('writable' in descriptor) {
-        descriptor.writable = false;
-        return;
-      }
-
-      if (!descriptor.set) {
-        descriptor.set = () => {
-          throw Error('Can not read-only method \'' + name + '\'');
-        };
-      }
-    });
-  };
-
-  const toObjectSet = (arrayOrString, delimiter) => {
-    const obj = {};
-
-    const define = (arr) => {
-      arr.forEach(value => {
-        obj[value] = true;
-      });
-    };
-
-    isArray(arrayOrString) ? define(arrayOrString) : define(String(arrayOrString).split(delimiter));
-
-    return obj;
-  };
-
-  const noop = () => {};
-
-  const toFiniteNumber = (value, defaultValue) => {
-    value = +value;
-    return Number.isFinite(value) ? value : defaultValue;
-  };
-
-  var utils = {
-    isArray,
-    isArrayBuffer,
-    isBuffer,
-    isFormData,
-    isArrayBufferView,
-    isString,
-    isNumber,
-    isBoolean,
-    isObject,
-    isPlainObject,
-    isUndefined,
-    isDate,
-    isFile,
-    isBlob,
-    isRegExp,
-    isFunction,
-    isStream,
-    isURLSearchParams,
-    isTypedArray,
-    isFileList,
-    forEach,
-    merge,
-    extend,
-    trim,
-    stripBOM,
-    inherits,
-    toFlatObject,
-    kindOf,
-    kindOfTest,
-    endsWith,
-    toArray,
-    forEachEntry,
-    matchAll,
-    isHTMLForm,
-    hasOwnProperty,
-    hasOwnProp: hasOwnProperty, // an alias to avoid ESLint no-prototype-builtins detection
-    reduceDescriptors,
-    freezeMethods,
-    toObjectSet,
-    toCamelCase,
-    noop,
-    toFiniteNumber
-  };
-
-  /**
-   * Create an Error with the specified message, config, error code, request and response.
-   *
-   * @param {string} message The error message.
-   * @param {string} [code] The error code (for example, 'ECONNABORTED').
-   * @param {Object} [config] The config.
-   * @param {Object} [request] The request.
-   * @param {Object} [response] The response.
-   *
-   * @returns {Error} The created error.
-   */
-  function AxiosError(message, code, config, request, response) {
-    Error.call(this);
-
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    } else {
-      this.stack = (new Error()).stack;
-    }
-
-    this.message = message;
-    this.name = 'AxiosError';
-    code && (this.code = code);
-    config && (this.config = config);
-    request && (this.request = request);
-    response && (this.response = response);
   }
 
-  utils.inherits(AxiosError, Error, {
-    toJSON: function toJSON() {
+  var utils$8 = {
+    isArray: isArray,
+    isArrayBuffer: isArrayBuffer,
+    isBuffer: isBuffer,
+    isFormData: isFormData,
+    isArrayBufferView: isArrayBufferView,
+    isString: isString,
+    isNumber: isNumber,
+    isObject: isObject,
+    isPlainObject: isPlainObject,
+    isUndefined: isUndefined,
+    isDate: isDate,
+    isFile: isFile,
+    isBlob: isBlob,
+    isFunction: isFunction,
+    isStream: isStream,
+    isURLSearchParams: isURLSearchParams,
+    isStandardBrowserEnv: isStandardBrowserEnv,
+    forEach: forEach,
+    merge: merge,
+    extend: extend,
+    trim: trim,
+    stripBOM: stripBOM
+  };
+
+  var utils$7 = utils$8;
+
+  function encode(val) {
+    return encodeURIComponent(val).
+      replace(/%3A/gi, ':').
+      replace(/%24/g, '$').
+      replace(/%2C/gi, ',').
+      replace(/%20/g, '+').
+      replace(/%5B/gi, '[').
+      replace(/%5D/gi, ']');
+  }
+
+  /**
+   * Build a URL by appending params to the end
+   *
+   * @param {string} url The base of the url (e.g., http://www.google.com)
+   * @param {object} [params] The params to be appended
+   * @returns {string} The formatted url
+   */
+  var buildURL$1 = function buildURL(url, params, paramsSerializer) {
+    /*eslint no-param-reassign:0*/
+    if (!params) {
+      return url;
+    }
+
+    var serializedParams;
+    if (paramsSerializer) {
+      serializedParams = paramsSerializer(params);
+    } else if (utils$7.isURLSearchParams(params)) {
+      serializedParams = params.toString();
+    } else {
+      var parts = [];
+
+      utils$7.forEach(params, function serialize(val, key) {
+        if (val === null || typeof val === 'undefined') {
+          return;
+        }
+
+        if (utils$7.isArray(val)) {
+          key = key + '[]';
+        } else {
+          val = [val];
+        }
+
+        utils$7.forEach(val, function parseValue(v) {
+          if (utils$7.isDate(v)) {
+            v = v.toISOString();
+          } else if (utils$7.isObject(v)) {
+            v = JSON.stringify(v);
+          }
+          parts.push(encode(key) + '=' + encode(v));
+        });
+      });
+
+      serializedParams = parts.join('&');
+    }
+
+    if (serializedParams) {
+      var hashmarkIndex = url.indexOf('#');
+      if (hashmarkIndex !== -1) {
+        url = url.slice(0, hashmarkIndex);
+      }
+
+      url += (url.indexOf('?') === -1 ? '?' : '&') + serializedParams;
+    }
+
+    return url;
+  };
+
+  var utils$6 = utils$8;
+
+  function InterceptorManager$1() {
+    this.handlers = [];
+  }
+
+  /**
+   * Add a new interceptor to the stack
+   *
+   * @param {Function} fulfilled The function to handle `then` for a `Promise`
+   * @param {Function} rejected The function to handle `reject` for a `Promise`
+   *
+   * @return {Number} An ID used to remove interceptor later
+   */
+  InterceptorManager$1.prototype.use = function use(fulfilled, rejected, options) {
+    this.handlers.push({
+      fulfilled: fulfilled,
+      rejected: rejected,
+      synchronous: options ? options.synchronous : false,
+      runWhen: options ? options.runWhen : null
+    });
+    return this.handlers.length - 1;
+  };
+
+  /**
+   * Remove an interceptor from the stack
+   *
+   * @param {Number} id The ID that was returned by `use`
+   */
+  InterceptorManager$1.prototype.eject = function eject(id) {
+    if (this.handlers[id]) {
+      this.handlers[id] = null;
+    }
+  };
+
+  /**
+   * Iterate over all the registered interceptors
+   *
+   * This method is particularly useful for skipping over any
+   * interceptors that may have become `null` calling `eject`.
+   *
+   * @param {Function} fn The function to call for each interceptor
+   */
+  InterceptorManager$1.prototype.forEach = function forEach(fn) {
+    utils$6.forEach(this.handlers, function forEachHandler(h) {
+      if (h !== null) {
+        fn(h);
+      }
+    });
+  };
+
+  var InterceptorManager_1 = InterceptorManager$1;
+
+  var utils$5 = utils$8;
+
+  var normalizeHeaderName = function normalizeHeaderName(headers, normalizedName) {
+    utils$5.forEach(headers, function processHeader(value, name) {
+      if (name !== normalizedName && name.toUpperCase() === normalizedName.toUpperCase()) {
+        headers[normalizedName] = value;
+        delete headers[name];
+      }
+    });
+  };
+
+  /**
+   * Update an Error with the specified config, error code, and response.
+   *
+   * @param {Error} error The error to update.
+   * @param {Object} config The config.
+   * @param {string} [code] The error code (for example, 'ECONNABORTED').
+   * @param {Object} [request] The request.
+   * @param {Object} [response] The response.
+   * @returns {Error} The error.
+   */
+  var enhanceError = function enhanceError(error, config, code, request, response) {
+    error.config = config;
+    if (code) {
+      error.code = code;
+    }
+
+    error.request = request;
+    error.response = response;
+    error.isAxiosError = true;
+
+    error.toJSON = function toJSON() {
       return {
         // Standard
         message: this.message,
@@ -808,1639 +688,770 @@
         code: this.code,
         status: this.response && this.response.status ? this.response.status : null
       };
-    }
-  });
-
-  const prototype = AxiosError.prototype;
-  const descriptors = {};
-
-  [
-    'ERR_BAD_OPTION_VALUE',
-    'ERR_BAD_OPTION',
-    'ECONNABORTED',
-    'ETIMEDOUT',
-    'ERR_NETWORK',
-    'ERR_FR_TOO_MANY_REDIRECTS',
-    'ERR_DEPRECATED',
-    'ERR_BAD_RESPONSE',
-    'ERR_BAD_REQUEST',
-    'ERR_CANCELED',
-    'ERR_NOT_SUPPORT',
-    'ERR_INVALID_URL'
-  // eslint-disable-next-line func-names
-  ].forEach(code => {
-    descriptors[code] = {value: code};
-  });
-
-  Object.defineProperties(AxiosError, descriptors);
-  Object.defineProperty(prototype, 'isAxiosError', {value: true});
-
-  // eslint-disable-next-line func-names
-  AxiosError.from = (error, code, config, request, response, customProps) => {
-    const axiosError = Object.create(prototype);
-
-    utils.toFlatObject(error, axiosError, function filter(obj) {
-      return obj !== Error.prototype;
-    }, prop => {
-      return prop !== 'isAxiosError';
-    });
-
-    AxiosError.call(axiosError, error.message, code, config, request, response);
-
-    axiosError.cause = error;
-
-    axiosError.name = error.name;
-
-    customProps && Object.assign(axiosError, customProps);
-
-    return axiosError;
-  };
-
-  /* eslint-env browser */
-  var browser = typeof self == 'object' ? self.FormData : window.FormData;
-
-  /**
-   * Determines if the given thing is a array or js object.
-   *
-   * @param {string} thing - The object or array to be visited.
-   *
-   * @returns {boolean}
-   */
-  function isVisitable(thing) {
-    return utils.isPlainObject(thing) || utils.isArray(thing);
-  }
-
-  /**
-   * It removes the brackets from the end of a string
-   *
-   * @param {string} key - The key of the parameter.
-   *
-   * @returns {string} the key without the brackets.
-   */
-  function removeBrackets(key) {
-    return utils.endsWith(key, '[]') ? key.slice(0, -2) : key;
-  }
-
-  /**
-   * It takes a path, a key, and a boolean, and returns a string
-   *
-   * @param {string} path - The path to the current key.
-   * @param {string} key - The key of the current object being iterated over.
-   * @param {string} dots - If true, the key will be rendered with dots instead of brackets.
-   *
-   * @returns {string} The path to the current key.
-   */
-  function renderKey(path, key, dots) {
-    if (!path) return key;
-    return path.concat(key).map(function each(token, i) {
-      // eslint-disable-next-line no-param-reassign
-      token = removeBrackets(token);
-      return !dots && i ? '[' + token + ']' : token;
-    }).join(dots ? '.' : '');
-  }
-
-  /**
-   * If the array is an array and none of its elements are visitable, then it's a flat array.
-   *
-   * @param {Array<any>} arr - The array to check
-   *
-   * @returns {boolean}
-   */
-  function isFlatArray(arr) {
-    return utils.isArray(arr) && !arr.some(isVisitable);
-  }
-
-  const predicates = utils.toFlatObject(utils, {}, null, function filter(prop) {
-    return /^is[A-Z]/.test(prop);
-  });
-
-  /**
-   * If the thing is a FormData object, return true, otherwise return false.
-   *
-   * @param {unknown} thing - The thing to check.
-   *
-   * @returns {boolean}
-   */
-  function isSpecCompliant(thing) {
-    return thing && utils.isFunction(thing.append) && thing[Symbol.toStringTag] === 'FormData' && thing[Symbol.iterator];
-  }
-
-  /**
-   * Convert a data object to FormData
-   *
-   * @param {Object} obj
-   * @param {?Object} [formData]
-   * @param {?Object} [options]
-   * @param {Function} [options.visitor]
-   * @param {Boolean} [options.metaTokens = true]
-   * @param {Boolean} [options.dots = false]
-   * @param {?Boolean} [options.indexes = false]
-   *
-   * @returns {Object}
-   **/
-
-  /**
-   * It converts an object into a FormData object
-   *
-   * @param {Object<any, any>} obj - The object to convert to form data.
-   * @param {string} formData - The FormData object to append to.
-   * @param {Object<string, any>} options
-   *
-   * @returns
-   */
-  function toFormData(obj, formData, options) {
-    if (!utils.isObject(obj)) {
-      throw new TypeError('target must be an object');
-    }
-
-    // eslint-disable-next-line no-param-reassign
-    formData = formData || new (browser || FormData)();
-
-    // eslint-disable-next-line no-param-reassign
-    options = utils.toFlatObject(options, {
-      metaTokens: true,
-      dots: false,
-      indexes: false
-    }, false, function defined(option, source) {
-      // eslint-disable-next-line no-eq-null,eqeqeq
-      return !utils.isUndefined(source[option]);
-    });
-
-    const metaTokens = options.metaTokens;
-    // eslint-disable-next-line no-use-before-define
-    const visitor = options.visitor || defaultVisitor;
-    const dots = options.dots;
-    const indexes = options.indexes;
-    const _Blob = options.Blob || typeof Blob !== 'undefined' && Blob;
-    const useBlob = _Blob && isSpecCompliant(formData);
-
-    if (!utils.isFunction(visitor)) {
-      throw new TypeError('visitor must be a function');
-    }
-
-    function convertValue(value) {
-      if (value === null) return '';
-
-      if (utils.isDate(value)) {
-        return value.toISOString();
-      }
-
-      if (!useBlob && utils.isBlob(value)) {
-        throw new AxiosError('Blob is not supported. Use a Buffer instead.');
-      }
-
-      if (utils.isArrayBuffer(value) || utils.isTypedArray(value)) {
-        return useBlob && typeof Blob === 'function' ? new Blob([value]) : Buffer.from(value);
-      }
-
-      return value;
-    }
-
-    /**
-     * Default visitor.
-     *
-     * @param {*} value
-     * @param {String|Number} key
-     * @param {Array<String|Number>} path
-     * @this {FormData}
-     *
-     * @returns {boolean} return true to visit the each prop of the value recursively
-     */
-    function defaultVisitor(value, key, path) {
-      let arr = value;
-
-      if (value && !path && typeof value === 'object') {
-        if (utils.endsWith(key, '{}')) {
-          // eslint-disable-next-line no-param-reassign
-          key = metaTokens ? key : key.slice(0, -2);
-          // eslint-disable-next-line no-param-reassign
-          value = JSON.stringify(value);
-        } else if (
-          (utils.isArray(value) && isFlatArray(value)) ||
-          (utils.isFileList(value) || utils.endsWith(key, '[]') && (arr = utils.toArray(value))
-          )) {
-          // eslint-disable-next-line no-param-reassign
-          key = removeBrackets(key);
-
-          arr.forEach(function each(el, index) {
-            !(utils.isUndefined(el) || el === null) && formData.append(
-              // eslint-disable-next-line no-nested-ternary
-              indexes === true ? renderKey([key], index, dots) : (indexes === null ? key : key + '[]'),
-              convertValue(el)
-            );
-          });
-          return false;
-        }
-      }
-
-      if (isVisitable(value)) {
-        return true;
-      }
-
-      formData.append(renderKey(path, key, dots), convertValue(value));
-
-      return false;
-    }
-
-    const stack = [];
-
-    const exposedHelpers = Object.assign(predicates, {
-      defaultVisitor,
-      convertValue,
-      isVisitable
-    });
-
-    function build(value, path) {
-      if (utils.isUndefined(value)) return;
-
-      if (stack.indexOf(value) !== -1) {
-        throw Error('Circular reference detected in ' + path.join('.'));
-      }
-
-      stack.push(value);
-
-      utils.forEach(value, function each(el, key) {
-        const result = !(utils.isUndefined(el) || el === null) && visitor.call(
-          formData, el, utils.isString(key) ? key.trim() : key, path, exposedHelpers
-        );
-
-        if (result === true) {
-          build(el, path ? path.concat(key) : [key]);
-        }
-      });
-
-      stack.pop();
-    }
-
-    if (!utils.isObject(obj)) {
-      throw new TypeError('data must be an object');
-    }
-
-    build(obj);
-
-    return formData;
-  }
-
-  /**
-   * It encodes a string by replacing all characters that are not in the unreserved set with
-   * their percent-encoded equivalents
-   *
-   * @param {string} str - The string to encode.
-   *
-   * @returns {string} The encoded string.
-   */
-  function encode(str) {
-    const charMap = {
-      '!': '%21',
-      "'": '%27',
-      '(': '%28',
-      ')': '%29',
-      '~': '%7E',
-      '%20': '+',
-      '%00': '\x00'
     };
-    return encodeURIComponent(str).replace(/[!'()~]|%20|%00/g, function replacer(match) {
-      return charMap[match];
-    });
-  }
-
-  /**
-   * It takes a params object and converts it to a FormData object
-   *
-   * @param {Object<string, any>} params - The parameters to be converted to a FormData object.
-   * @param {Object<string, any>} options - The options object passed to the Axios constructor.
-   *
-   * @returns {void}
-   */
-  function AxiosURLSearchParams(params, options) {
-    this._pairs = [];
-
-    params && toFormData(params, this, options);
-  }
-
-  const prototype$1 = AxiosURLSearchParams.prototype;
-
-  prototype$1.append = function append(name, value) {
-    this._pairs.push([name, value]);
+    return error;
   };
 
-  prototype$1.toString = function toString(encoder) {
-    const _encode = encoder ? function(value) {
-      return encoder.call(this, value, encode);
-    } : encode;
+  var createError;
+  var hasRequiredCreateError;
 
-    return this._pairs.map(function each(pair) {
-      return _encode(pair[0]) + '=' + _encode(pair[1]);
-    }, '').join('&');
-  };
+  function requireCreateError () {
+  	if (hasRequiredCreateError) return createError;
+  	hasRequiredCreateError = 1;
 
-  /**
-   * It replaces all instances of the characters `:`, `$`, `,`, `+`, `[`, and `]` with their
-   * URI encoded counterparts
-   *
-   * @param {string} val The value to be encoded.
-   *
-   * @returns {string} The encoded value.
-   */
-  function encode$1(val) {
-    return encodeURIComponent(val).
-      replace(/%3A/gi, ':').
-      replace(/%24/g, '$').
-      replace(/%2C/gi, ',').
-      replace(/%20/g, '+').
-      replace(/%5B/gi, '[').
-      replace(/%5D/gi, ']');
+  	var enhanceError$1 = enhanceError;
+
+  	/**
+  	 * Create an Error with the specified message, config, error code, request and response.
+  	 *
+  	 * @param {string} message The error message.
+  	 * @param {Object} config The config.
+  	 * @param {string} [code] The error code (for example, 'ECONNABORTED').
+  	 * @param {Object} [request] The request.
+  	 * @param {Object} [response] The response.
+  	 * @returns {Error} The created error.
+  	 */
+  	createError = function createError(message, config, code, request, response) {
+  	  var error = new Error(message);
+  	  return enhanceError$1(error, config, code, request, response);
+  	};
+  	return createError;
   }
 
-  /**
-   * Build a URL by appending params to the end
-   *
-   * @param {string} url The base of the url (e.g., http://www.google.com)
-   * @param {object} [params] The params to be appended
-   * @param {?object} options
-   *
-   * @returns {string} The formatted url
-   */
-  function buildURL(url, params, options) {
-    /*eslint no-param-reassign:0*/
-    if (!params) {
-      return url;
-    }
-    
-    const _encode = options && options.encode || encode$1;
+  var settle;
+  var hasRequiredSettle;
 
-    const serializeFn = options && options.serialize;
+  function requireSettle () {
+  	if (hasRequiredSettle) return settle;
+  	hasRequiredSettle = 1;
 
-    let serializedParams;
+  	var createError = requireCreateError();
 
-    if (serializeFn) {
-      serializedParams = serializeFn(params, options);
-    } else {
-      serializedParams = utils.isURLSearchParams(params) ?
-        params.toString() :
-        new AxiosURLSearchParams(params, options).toString(_encode);
-    }
-
-    if (serializedParams) {
-      const hashmarkIndex = url.indexOf("#");
-
-      if (hashmarkIndex !== -1) {
-        url = url.slice(0, hashmarkIndex);
-      }
-      url += (url.indexOf('?') === -1 ? '?' : '&') + serializedParams;
-    }
-
-    return url;
+  	/**
+  	 * Resolve or reject a Promise based on response status.
+  	 *
+  	 * @param {Function} resolve A function that resolves the promise.
+  	 * @param {Function} reject A function that rejects the promise.
+  	 * @param {object} response The response.
+  	 */
+  	settle = function settle(resolve, reject, response) {
+  	  var validateStatus = response.config.validateStatus;
+  	  if (!response.status || !validateStatus || validateStatus(response.status)) {
+  	    resolve(response);
+  	  } else {
+  	    reject(createError(
+  	      'Request failed with status code ' + response.status,
+  	      response.config,
+  	      null,
+  	      response.request,
+  	      response
+  	    ));
+  	  }
+  	};
+  	return settle;
   }
 
-  class InterceptorManager {
-    constructor() {
-      this.handlers = [];
-    }
+  var cookies;
+  var hasRequiredCookies;
 
-    /**
-     * Add a new interceptor to the stack
-     *
-     * @param {Function} fulfilled The function to handle `then` for a `Promise`
-     * @param {Function} rejected The function to handle `reject` for a `Promise`
-     *
-     * @return {Number} An ID used to remove interceptor later
-     */
-    use(fulfilled, rejected, options) {
-      this.handlers.push({
-        fulfilled,
-        rejected,
-        synchronous: options ? options.synchronous : false,
-        runWhen: options ? options.runWhen : null
-      });
-      return this.handlers.length - 1;
-    }
+  function requireCookies () {
+  	if (hasRequiredCookies) return cookies;
+  	hasRequiredCookies = 1;
 
-    /**
-     * Remove an interceptor from the stack
-     *
-     * @param {Number} id The ID that was returned by `use`
-     *
-     * @returns {Boolean} `true` if the interceptor was removed, `false` otherwise
-     */
-    eject(id) {
-      if (this.handlers[id]) {
-        this.handlers[id] = null;
-      }
-    }
+  	var utils = utils$8;
 
-    /**
-     * Clear all interceptors from the stack
-     *
-     * @returns {void}
-     */
-    clear() {
-      if (this.handlers) {
-        this.handlers = [];
-      }
-    }
+  	cookies = (
+  	  utils.isStandardBrowserEnv() ?
 
-    /**
-     * Iterate over all the registered interceptors
-     *
-     * This method is particularly useful for skipping over any
-     * interceptors that may have become `null` calling `eject`.
-     *
-     * @param {Function} fn The function to call for each interceptor
-     *
-     * @returns {void}
-     */
-    forEach(fn) {
-      utils.forEach(this.handlers, function forEachHandler(h) {
-        if (h !== null) {
-          fn(h);
-        }
-      });
-    }
+  	  // Standard browser envs support document.cookie
+  	    (function standardBrowserEnv() {
+  	      return {
+  	        write: function write(name, value, expires, path, domain, secure) {
+  	          var cookie = [];
+  	          cookie.push(name + '=' + encodeURIComponent(value));
+
+  	          if (utils.isNumber(expires)) {
+  	            cookie.push('expires=' + new Date(expires).toGMTString());
+  	          }
+
+  	          if (utils.isString(path)) {
+  	            cookie.push('path=' + path);
+  	          }
+
+  	          if (utils.isString(domain)) {
+  	            cookie.push('domain=' + domain);
+  	          }
+
+  	          if (secure === true) {
+  	            cookie.push('secure');
+  	          }
+
+  	          document.cookie = cookie.join('; ');
+  	        },
+
+  	        read: function read(name) {
+  	          var match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
+  	          return (match ? decodeURIComponent(match[3]) : null);
+  	        },
+
+  	        remove: function remove(name) {
+  	          this.write(name, '', Date.now() - 86400000);
+  	        }
+  	      };
+  	    })() :
+
+  	  // Non standard browser env (web workers, react-native) lack needed support.
+  	    (function nonStandardBrowserEnv() {
+  	      return {
+  	        write: function write() {},
+  	        read: function read() { return null; },
+  	        remove: function remove() {}
+  	      };
+  	    })()
+  	);
+  	return cookies;
   }
 
-  var transitionalDefaults = {
-    silentJSONParsing: true,
-    forcedJSONParsing: true,
-    clarifyTimeoutError: false
-  };
+  var isAbsoluteURL;
+  var hasRequiredIsAbsoluteURL;
 
-  var URLSearchParams$1 = typeof URLSearchParams !== 'undefined' ? URLSearchParams : AxiosURLSearchParams;
+  function requireIsAbsoluteURL () {
+  	if (hasRequiredIsAbsoluteURL) return isAbsoluteURL;
+  	hasRequiredIsAbsoluteURL = 1;
 
-  /**
-   * Determine if we're running in a standard browser environment
-   *
-   * This allows axios to run in a web worker, and react-native.
-   * Both environments support XMLHttpRequest, but not fully standard globals.
-   *
-   * web workers:
-   *  typeof window -> undefined
-   *  typeof document -> undefined
-   *
-   * react-native:
-   *  navigator.product -> 'ReactNative'
-   * nativescript
-   *  navigator.product -> 'NativeScript' or 'NS'
-   *
-   * @returns {boolean}
-   */
-  const isStandardBrowserEnv = (() => {
-    let product;
-    if (typeof navigator !== 'undefined' && (
-      (product = navigator.product) === 'ReactNative' ||
-      product === 'NativeScript' ||
-      product === 'NS')
-    ) {
-      return false;
-    }
-
-    return typeof window !== 'undefined' && typeof document !== 'undefined';
-  })();
-
-  var platform = {
-    isBrowser: true,
-    classes: {
-      URLSearchParams: URLSearchParams$1,
-      FormData,
-      Blob
-    },
-    isStandardBrowserEnv,
-    protocols: ['http', 'https', 'file', 'blob', 'url', 'data']
-  };
-
-  function toURLEncodedForm(data, options) {
-    return toFormData(data, new platform.classes.URLSearchParams(), Object.assign({
-      visitor: function(value, key, path, helpers) {
-
-        return helpers.defaultVisitor.apply(this, arguments);
-      }
-    }, options));
+  	/**
+  	 * Determines whether the specified URL is absolute
+  	 *
+  	 * @param {string} url The URL to test
+  	 * @returns {boolean} True if the specified URL is absolute, otherwise false
+  	 */
+  	isAbsoluteURL = function isAbsoluteURL(url) {
+  	  // A URL is considered absolute if it begins with "<scheme>://" or "//" (protocol-relative URL).
+  	  // RFC 3986 defines scheme name as a sequence of characters beginning with a letter and followed
+  	  // by any combination of letters, digits, plus, period, or hyphen.
+  	  return /^([a-z][a-z\d\+\-\.]*:)?\/\//i.test(url);
+  	};
+  	return isAbsoluteURL;
   }
 
-  /**
-   * It takes a string like `foo[x][y][z]` and returns an array like `['foo', 'x', 'y', 'z']
-   *
-   * @param {string} name - The name of the property to get.
-   *
-   * @returns An array of strings.
-   */
-  function parsePropPath(name) {
-    // foo[x][y][z]
-    // foo.x.y.z
-    // foo-x-y-z
-    // foo x y z
-    return utils.matchAll(/\w+|\[(\w*)]/g, name).map(match => {
-      return match[0] === '[]' ? '' : match[1] || match[0];
-    });
+  var combineURLs;
+  var hasRequiredCombineURLs;
+
+  function requireCombineURLs () {
+  	if (hasRequiredCombineURLs) return combineURLs;
+  	hasRequiredCombineURLs = 1;
+
+  	/**
+  	 * Creates a new URL by combining the specified URLs
+  	 *
+  	 * @param {string} baseURL The base URL
+  	 * @param {string} relativeURL The relative URL
+  	 * @returns {string} The combined URL
+  	 */
+  	combineURLs = function combineURLs(baseURL, relativeURL) {
+  	  return relativeURL
+  	    ? baseURL.replace(/\/+$/, '') + '/' + relativeURL.replace(/^\/+/, '')
+  	    : baseURL;
+  	};
+  	return combineURLs;
   }
 
-  /**
-   * Convert an array to an object.
-   *
-   * @param {Array<any>} arr - The array to convert to an object.
-   *
-   * @returns An object with the same keys and values as the array.
-   */
-  function arrayToObject(arr) {
-    const obj = {};
-    const keys = Object.keys(arr);
-    let i;
-    const len = keys.length;
-    let key;
-    for (i = 0; i < len; i++) {
-      key = keys[i];
-      obj[key] = arr[key];
-    }
-    return obj;
+  var buildFullPath;
+  var hasRequiredBuildFullPath;
+
+  function requireBuildFullPath () {
+  	if (hasRequiredBuildFullPath) return buildFullPath;
+  	hasRequiredBuildFullPath = 1;
+
+  	var isAbsoluteURL = requireIsAbsoluteURL();
+  	var combineURLs = requireCombineURLs();
+
+  	/**
+  	 * Creates a new URL by combining the baseURL with the requestedURL,
+  	 * only when the requestedURL is not already an absolute URL.
+  	 * If the requestURL is absolute, this function returns the requestedURL untouched.
+  	 *
+  	 * @param {string} baseURL The base URL
+  	 * @param {string} requestedURL Absolute or relative URL to combine
+  	 * @returns {string} The combined full path
+  	 */
+  	buildFullPath = function buildFullPath(baseURL, requestedURL) {
+  	  if (baseURL && !isAbsoluteURL(requestedURL)) {
+  	    return combineURLs(baseURL, requestedURL);
+  	  }
+  	  return requestedURL;
+  	};
+  	return buildFullPath;
   }
 
-  /**
-   * It takes a FormData object and returns a JavaScript object
-   *
-   * @param {string} formData The FormData object to convert to JSON.
-   *
-   * @returns {Object<string, any> | null} The converted object.
-   */
-  function formDataToJSON(formData) {
-    function buildPath(path, value, target, index) {
-      let name = path[index++];
-      const isNumericKey = Number.isFinite(+name);
-      const isLast = index >= path.length;
-      name = !name && utils.isArray(target) ? target.length : name;
+  var parseHeaders;
+  var hasRequiredParseHeaders;
 
-      if (isLast) {
-        if (utils.hasOwnProp(target, name)) {
-          target[name] = [target[name], value];
-        } else {
-          target[name] = value;
-        }
+  function requireParseHeaders () {
+  	if (hasRequiredParseHeaders) return parseHeaders;
+  	hasRequiredParseHeaders = 1;
 
-        return !isNumericKey;
-      }
+  	var utils = utils$8;
 
-      if (!target[name] || !utils.isObject(target[name])) {
-        target[name] = [];
-      }
+  	// Headers whose duplicates are ignored by node
+  	// c.f. https://nodejs.org/api/http.html#http_message_headers
+  	var ignoreDuplicateOf = [
+  	  'age', 'authorization', 'content-length', 'content-type', 'etag',
+  	  'expires', 'from', 'host', 'if-modified-since', 'if-unmodified-since',
+  	  'last-modified', 'location', 'max-forwards', 'proxy-authorization',
+  	  'referer', 'retry-after', 'user-agent'
+  	];
 
-      const result = buildPath(path, value, target[name], index);
+  	/**
+  	 * Parse headers into an object
+  	 *
+  	 * ```
+  	 * Date: Wed, 27 Aug 2014 08:58:49 GMT
+  	 * Content-Type: application/json
+  	 * Connection: keep-alive
+  	 * Transfer-Encoding: chunked
+  	 * ```
+  	 *
+  	 * @param {String} headers Headers needing to be parsed
+  	 * @returns {Object} Headers parsed into an object
+  	 */
+  	parseHeaders = function parseHeaders(headers) {
+  	  var parsed = {};
+  	  var key;
+  	  var val;
+  	  var i;
 
-      if (result && utils.isArray(target[name])) {
-        target[name] = arrayToObject(target[name]);
-      }
+  	  if (!headers) { return parsed; }
 
-      return !isNumericKey;
-    }
+  	  utils.forEach(headers.split('\n'), function parser(line) {
+  	    i = line.indexOf(':');
+  	    key = utils.trim(line.substr(0, i)).toLowerCase();
+  	    val = utils.trim(line.substr(i + 1));
 
-    if (utils.isFormData(formData) && utils.isFunction(formData.entries)) {
-      const obj = {};
+  	    if (key) {
+  	      if (parsed[key] && ignoreDuplicateOf.indexOf(key) >= 0) {
+  	        return;
+  	      }
+  	      if (key === 'set-cookie') {
+  	        parsed[key] = (parsed[key] ? parsed[key] : []).concat([val]);
+  	      } else {
+  	        parsed[key] = parsed[key] ? parsed[key] + ', ' + val : val;
+  	      }
+  	    }
+  	  });
 
-      utils.forEachEntry(formData, (name, value) => {
-        buildPath(parsePropPath(name), value, obj, 0);
-      });
-
-      return obj;
-    }
-
-    return null;
+  	  return parsed;
+  	};
+  	return parseHeaders;
   }
 
-  /**
-   * Resolve or reject a Promise based on response status.
-   *
-   * @param {Function} resolve A function that resolves the promise.
-   * @param {Function} reject A function that rejects the promise.
-   * @param {object} response The response.
-   *
-   * @returns {object} The response.
-   */
-  function settle(resolve, reject, response) {
-    const validateStatus = response.config.validateStatus;
-    if (!response.status || !validateStatus || validateStatus(response.status)) {
-      resolve(response);
-    } else {
-      reject(new AxiosError(
-        'Request failed with status code ' + response.status,
-        [AxiosError.ERR_BAD_REQUEST, AxiosError.ERR_BAD_RESPONSE][Math.floor(response.status / 100) - 4],
-        response.config,
-        response.request,
-        response
-      ));
-    }
+  var isURLSameOrigin;
+  var hasRequiredIsURLSameOrigin;
+
+  function requireIsURLSameOrigin () {
+  	if (hasRequiredIsURLSameOrigin) return isURLSameOrigin;
+  	hasRequiredIsURLSameOrigin = 1;
+
+  	var utils = utils$8;
+
+  	isURLSameOrigin = (
+  	  utils.isStandardBrowserEnv() ?
+
+  	  // Standard browser envs have full support of the APIs needed to test
+  	  // whether the request URL is of the same origin as current location.
+  	    (function standardBrowserEnv() {
+  	      var msie = /(msie|trident)/i.test(navigator.userAgent);
+  	      var urlParsingNode = document.createElement('a');
+  	      var originURL;
+
+  	      /**
+  	    * Parse a URL to discover it's components
+  	    *
+  	    * @param {String} url The URL to be parsed
+  	    * @returns {Object}
+  	    */
+  	      function resolveURL(url) {
+  	        var href = url;
+
+  	        if (msie) {
+  	        // IE needs attribute set twice to normalize properties
+  	          urlParsingNode.setAttribute('href', href);
+  	          href = urlParsingNode.href;
+  	        }
+
+  	        urlParsingNode.setAttribute('href', href);
+
+  	        // urlParsingNode provides the UrlUtils interface - http://url.spec.whatwg.org/#urlutils
+  	        return {
+  	          href: urlParsingNode.href,
+  	          protocol: urlParsingNode.protocol ? urlParsingNode.protocol.replace(/:$/, '') : '',
+  	          host: urlParsingNode.host,
+  	          search: urlParsingNode.search ? urlParsingNode.search.replace(/^\?/, '') : '',
+  	          hash: urlParsingNode.hash ? urlParsingNode.hash.replace(/^#/, '') : '',
+  	          hostname: urlParsingNode.hostname,
+  	          port: urlParsingNode.port,
+  	          pathname: (urlParsingNode.pathname.charAt(0) === '/') ?
+  	            urlParsingNode.pathname :
+  	            '/' + urlParsingNode.pathname
+  	        };
+  	      }
+
+  	      originURL = resolveURL(window.location.href);
+
+  	      /**
+  	    * Determine if a URL shares the same origin as the current location
+  	    *
+  	    * @param {String} requestURL The URL to test
+  	    * @returns {boolean} True if URL shares the same origin, otherwise false
+  	    */
+  	      return function isURLSameOrigin(requestURL) {
+  	        var parsed = (utils.isString(requestURL)) ? resolveURL(requestURL) : requestURL;
+  	        return (parsed.protocol === originURL.protocol &&
+  	            parsed.host === originURL.host);
+  	      };
+  	    })() :
+
+  	  // Non standard browser envs (web workers, react-native) lack needed support.
+  	    (function nonStandardBrowserEnv() {
+  	      return function isURLSameOrigin() {
+  	        return true;
+  	      };
+  	    })()
+  	);
+  	return isURLSameOrigin;
   }
 
-  var cookies = platform.isStandardBrowserEnv ?
+  var Cancel_1;
+  var hasRequiredCancel;
 
-  // Standard browser envs support document.cookie
-    (function standardBrowserEnv() {
-      return {
-        write: function write(name, value, expires, path, domain, secure) {
-          const cookie = [];
-          cookie.push(name + '=' + encodeURIComponent(value));
+  function requireCancel () {
+  	if (hasRequiredCancel) return Cancel_1;
+  	hasRequiredCancel = 1;
 
-          if (utils.isNumber(expires)) {
-            cookie.push('expires=' + new Date(expires).toGMTString());
-          }
+  	/**
+  	 * A `Cancel` is an object that is thrown when an operation is canceled.
+  	 *
+  	 * @class
+  	 * @param {string=} message The message.
+  	 */
+  	function Cancel(message) {
+  	  this.message = message;
+  	}
 
-          if (utils.isString(path)) {
-            cookie.push('path=' + path);
-          }
+  	Cancel.prototype.toString = function toString() {
+  	  return 'Cancel' + (this.message ? ': ' + this.message : '');
+  	};
 
-          if (utils.isString(domain)) {
-            cookie.push('domain=' + domain);
-          }
+  	Cancel.prototype.__CANCEL__ = true;
 
-          if (secure === true) {
-            cookie.push('secure');
-          }
-
-          document.cookie = cookie.join('; ');
-        },
-
-        read: function read(name) {
-          const match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
-          return (match ? decodeURIComponent(match[3]) : null);
-        },
-
-        remove: function remove(name) {
-          this.write(name, '', Date.now() - 86400000);
-        }
-      };
-    })() :
-
-  // Non standard browser env (web workers, react-native) lack needed support.
-    (function nonStandardBrowserEnv() {
-      return {
-        write: function write() {},
-        read: function read() { return null; },
-        remove: function remove() {}
-      };
-    })();
-
-  /**
-   * Determines whether the specified URL is absolute
-   *
-   * @param {string} url The URL to test
-   *
-   * @returns {boolean} True if the specified URL is absolute, otherwise false
-   */
-  function isAbsoluteURL(url) {
-    // A URL is considered absolute if it begins with "<scheme>://" or "//" (protocol-relative URL).
-    // RFC 3986 defines scheme name as a sequence of characters beginning with a letter and followed
-    // by any combination of letters, digits, plus, period, or hyphen.
-    return /^([a-z][a-z\d+\-.]*:)?\/\//i.test(url);
+  	Cancel_1 = Cancel;
+  	return Cancel_1;
   }
 
-  /**
-   * Creates a new URL by combining the specified URLs
-   *
-   * @param {string} baseURL The base URL
-   * @param {string} relativeURL The relative URL
-   *
-   * @returns {string} The combined URL
-   */
-  function combineURLs(baseURL, relativeURL) {
-    return relativeURL
-      ? baseURL.replace(/\/+$/, '') + '/' + relativeURL.replace(/^\/+/, '')
-      : baseURL;
+  var xhr;
+  var hasRequiredXhr;
+
+  function requireXhr () {
+  	if (hasRequiredXhr) return xhr;
+  	hasRequiredXhr = 1;
+
+  	var utils = utils$8;
+  	var settle = requireSettle();
+  	var cookies = requireCookies();
+  	var buildURL = buildURL$1;
+  	var buildFullPath = requireBuildFullPath();
+  	var parseHeaders = requireParseHeaders();
+  	var isURLSameOrigin = requireIsURLSameOrigin();
+  	var createError = requireCreateError();
+  	var defaults = requireDefaults();
+  	var Cancel = requireCancel();
+
+  	xhr = function xhrAdapter(config) {
+  	  return new Promise(function dispatchXhrRequest(resolve, reject) {
+  	    var requestData = config.data;
+  	    var requestHeaders = config.headers;
+  	    var responseType = config.responseType;
+  	    var onCanceled;
+  	    function done() {
+  	      if (config.cancelToken) {
+  	        config.cancelToken.unsubscribe(onCanceled);
+  	      }
+
+  	      if (config.signal) {
+  	        config.signal.removeEventListener('abort', onCanceled);
+  	      }
+  	    }
+
+  	    if (utils.isFormData(requestData)) {
+  	      delete requestHeaders['Content-Type']; // Let the browser set it
+  	    }
+
+  	    var request = new XMLHttpRequest();
+
+  	    // HTTP basic authentication
+  	    if (config.auth) {
+  	      var username = config.auth.username || '';
+  	      var password = config.auth.password ? unescape(encodeURIComponent(config.auth.password)) : '';
+  	      requestHeaders.Authorization = 'Basic ' + btoa(username + ':' + password);
+  	    }
+
+  	    var fullPath = buildFullPath(config.baseURL, config.url);
+  	    request.open(config.method.toUpperCase(), buildURL(fullPath, config.params, config.paramsSerializer), true);
+
+  	    // Set the request timeout in MS
+  	    request.timeout = config.timeout;
+
+  	    function onloadend() {
+  	      if (!request) {
+  	        return;
+  	      }
+  	      // Prepare the response
+  	      var responseHeaders = 'getAllResponseHeaders' in request ? parseHeaders(request.getAllResponseHeaders()) : null;
+  	      var responseData = !responseType || responseType === 'text' ||  responseType === 'json' ?
+  	        request.responseText : request.response;
+  	      var response = {
+  	        data: responseData,
+  	        status: request.status,
+  	        statusText: request.statusText,
+  	        headers: responseHeaders,
+  	        config: config,
+  	        request: request
+  	      };
+
+  	      settle(function _resolve(value) {
+  	        resolve(value);
+  	        done();
+  	      }, function _reject(err) {
+  	        reject(err);
+  	        done();
+  	      }, response);
+
+  	      // Clean up request
+  	      request = null;
+  	    }
+
+  	    if ('onloadend' in request) {
+  	      // Use onloadend if available
+  	      request.onloadend = onloadend;
+  	    } else {
+  	      // Listen for ready state to emulate onloadend
+  	      request.onreadystatechange = function handleLoad() {
+  	        if (!request || request.readyState !== 4) {
+  	          return;
+  	        }
+
+  	        // The request errored out and we didn't get a response, this will be
+  	        // handled by onerror instead
+  	        // With one exception: request that using file: protocol, most browsers
+  	        // will return status as 0 even though it's a successful request
+  	        if (request.status === 0 && !(request.responseURL && request.responseURL.indexOf('file:') === 0)) {
+  	          return;
+  	        }
+  	        // readystate handler is calling before onerror or ontimeout handlers,
+  	        // so we should call onloadend on the next 'tick'
+  	        setTimeout(onloadend);
+  	      };
+  	    }
+
+  	    // Handle browser request cancellation (as opposed to a manual cancellation)
+  	    request.onabort = function handleAbort() {
+  	      if (!request) {
+  	        return;
+  	      }
+
+  	      reject(createError('Request aborted', config, 'ECONNABORTED', request));
+
+  	      // Clean up request
+  	      request = null;
+  	    };
+
+  	    // Handle low level network errors
+  	    request.onerror = function handleError() {
+  	      // Real errors are hidden from us by the browser
+  	      // onerror should only fire if it's a network error
+  	      reject(createError('Network Error', config, null, request));
+
+  	      // Clean up request
+  	      request = null;
+  	    };
+
+  	    // Handle timeout
+  	    request.ontimeout = function handleTimeout() {
+  	      var timeoutErrorMessage = config.timeout ? 'timeout of ' + config.timeout + 'ms exceeded' : 'timeout exceeded';
+  	      var transitional = config.transitional || defaults.transitional;
+  	      if (config.timeoutErrorMessage) {
+  	        timeoutErrorMessage = config.timeoutErrorMessage;
+  	      }
+  	      reject(createError(
+  	        timeoutErrorMessage,
+  	        config,
+  	        transitional.clarifyTimeoutError ? 'ETIMEDOUT' : 'ECONNABORTED',
+  	        request));
+
+  	      // Clean up request
+  	      request = null;
+  	    };
+
+  	    // Add xsrf header
+  	    // This is only done if running in a standard browser environment.
+  	    // Specifically not if we're in a web worker, or react-native.
+  	    if (utils.isStandardBrowserEnv()) {
+  	      // Add xsrf header
+  	      var xsrfValue = (config.withCredentials || isURLSameOrigin(fullPath)) && config.xsrfCookieName ?
+  	        cookies.read(config.xsrfCookieName) :
+  	        undefined;
+
+  	      if (xsrfValue) {
+  	        requestHeaders[config.xsrfHeaderName] = xsrfValue;
+  	      }
+  	    }
+
+  	    // Add headers to the request
+  	    if ('setRequestHeader' in request) {
+  	      utils.forEach(requestHeaders, function setRequestHeader(val, key) {
+  	        if (typeof requestData === 'undefined' && key.toLowerCase() === 'content-type') {
+  	          // Remove Content-Type if data is undefined
+  	          delete requestHeaders[key];
+  	        } else {
+  	          // Otherwise add header to the request
+  	          request.setRequestHeader(key, val);
+  	        }
+  	      });
+  	    }
+
+  	    // Add withCredentials to request if needed
+  	    if (!utils.isUndefined(config.withCredentials)) {
+  	      request.withCredentials = !!config.withCredentials;
+  	    }
+
+  	    // Add responseType to request if needed
+  	    if (responseType && responseType !== 'json') {
+  	      request.responseType = config.responseType;
+  	    }
+
+  	    // Handle progress if needed
+  	    if (typeof config.onDownloadProgress === 'function') {
+  	      request.addEventListener('progress', config.onDownloadProgress);
+  	    }
+
+  	    // Not all browsers support upload events
+  	    if (typeof config.onUploadProgress === 'function' && request.upload) {
+  	      request.upload.addEventListener('progress', config.onUploadProgress);
+  	    }
+
+  	    if (config.cancelToken || config.signal) {
+  	      // Handle cancellation
+  	      // eslint-disable-next-line func-names
+  	      onCanceled = function(cancel) {
+  	        if (!request) {
+  	          return;
+  	        }
+  	        reject(!cancel || (cancel && cancel.type) ? new Cancel('canceled') : cancel);
+  	        request.abort();
+  	        request = null;
+  	      };
+
+  	      config.cancelToken && config.cancelToken.subscribe(onCanceled);
+  	      if (config.signal) {
+  	        config.signal.aborted ? onCanceled() : config.signal.addEventListener('abort', onCanceled);
+  	      }
+  	    }
+
+  	    if (!requestData) {
+  	      requestData = null;
+  	    }
+
+  	    // Send the request
+  	    request.send(requestData);
+  	  });
+  	};
+  	return xhr;
   }
 
-  /**
-   * Creates a new URL by combining the baseURL with the requestedURL,
-   * only when the requestedURL is not already an absolute URL.
-   * If the requestURL is absolute, this function returns the requestedURL untouched.
-   *
-   * @param {string} baseURL The base URL
-   * @param {string} requestedURL Absolute or relative URL to combine
-   *
-   * @returns {string} The combined full path
-   */
-  function buildFullPath(baseURL, requestedURL) {
-    if (baseURL && !isAbsoluteURL(requestedURL)) {
-      return combineURLs(baseURL, requestedURL);
-    }
-    return requestedURL;
+  var defaults_1;
+  var hasRequiredDefaults;
+
+  function requireDefaults () {
+  	if (hasRequiredDefaults) return defaults_1;
+  	hasRequiredDefaults = 1;
+
+  	var utils = utils$8;
+  	var normalizeHeaderName$1 = normalizeHeaderName;
+  	var enhanceError$1 = enhanceError;
+
+  	var DEFAULT_CONTENT_TYPE = {
+  	  'Content-Type': 'application/x-www-form-urlencoded'
+  	};
+
+  	function setContentTypeIfUnset(headers, value) {
+  	  if (!utils.isUndefined(headers) && utils.isUndefined(headers['Content-Type'])) {
+  	    headers['Content-Type'] = value;
+  	  }
+  	}
+
+  	function getDefaultAdapter() {
+  	  var adapter;
+  	  if (typeof XMLHttpRequest !== 'undefined') {
+  	    // For browsers use XHR adapter
+  	    adapter = requireXhr();
+  	  } else if (typeof process !== 'undefined' && Object.prototype.toString.call(process) === '[object process]') {
+  	    // For node use HTTP adapter
+  	    adapter = requireXhr();
+  	  }
+  	  return adapter;
+  	}
+
+  	function stringifySafely(rawValue, parser, encoder) {
+  	  if (utils.isString(rawValue)) {
+  	    try {
+  	      (parser || JSON.parse)(rawValue);
+  	      return utils.trim(rawValue);
+  	    } catch (e) {
+  	      if (e.name !== 'SyntaxError') {
+  	        throw e;
+  	      }
+  	    }
+  	  }
+
+  	  return (encoder || JSON.stringify)(rawValue);
+  	}
+
+  	var defaults = {
+
+  	  transitional: {
+  	    silentJSONParsing: true,
+  	    forcedJSONParsing: true,
+  	    clarifyTimeoutError: false
+  	  },
+
+  	  adapter: getDefaultAdapter(),
+
+  	  transformRequest: [function transformRequest(data, headers) {
+  	    normalizeHeaderName$1(headers, 'Accept');
+  	    normalizeHeaderName$1(headers, 'Content-Type');
+
+  	    if (utils.isFormData(data) ||
+  	      utils.isArrayBuffer(data) ||
+  	      utils.isBuffer(data) ||
+  	      utils.isStream(data) ||
+  	      utils.isFile(data) ||
+  	      utils.isBlob(data)
+  	    ) {
+  	      return data;
+  	    }
+  	    if (utils.isArrayBufferView(data)) {
+  	      return data.buffer;
+  	    }
+  	    if (utils.isURLSearchParams(data)) {
+  	      setContentTypeIfUnset(headers, 'application/x-www-form-urlencoded;charset=utf-8');
+  	      return data.toString();
+  	    }
+  	    if (utils.isObject(data) || (headers && headers['Content-Type'] === 'application/json')) {
+  	      setContentTypeIfUnset(headers, 'application/json');
+  	      return stringifySafely(data);
+  	    }
+  	    return data;
+  	  }],
+
+  	  transformResponse: [function transformResponse(data) {
+  	    var transitional = this.transitional || defaults.transitional;
+  	    var silentJSONParsing = transitional && transitional.silentJSONParsing;
+  	    var forcedJSONParsing = transitional && transitional.forcedJSONParsing;
+  	    var strictJSONParsing = !silentJSONParsing && this.responseType === 'json';
+
+  	    if (strictJSONParsing || (forcedJSONParsing && utils.isString(data) && data.length)) {
+  	      try {
+  	        return JSON.parse(data);
+  	      } catch (e) {
+  	        if (strictJSONParsing) {
+  	          if (e.name === 'SyntaxError') {
+  	            throw enhanceError$1(e, this, 'E_JSON_PARSE');
+  	          }
+  	          throw e;
+  	        }
+  	      }
+  	    }
+
+  	    return data;
+  	  }],
+
+  	  /**
+  	   * A timeout in milliseconds to abort a request. If set to 0 (default) a
+  	   * timeout is not created.
+  	   */
+  	  timeout: 0,
+
+  	  xsrfCookieName: 'XSRF-TOKEN',
+  	  xsrfHeaderName: 'X-XSRF-TOKEN',
+
+  	  maxContentLength: -1,
+  	  maxBodyLength: -1,
+
+  	  validateStatus: function validateStatus(status) {
+  	    return status >= 200 && status < 300;
+  	  },
+
+  	  headers: {
+  	    common: {
+  	      'Accept': 'application/json, text/plain, */*'
+  	    }
+  	  }
+  	};
+
+  	utils.forEach(['delete', 'get', 'head'], function forEachMethodNoData(method) {
+  	  defaults.headers[method] = {};
+  	});
+
+  	utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
+  	  defaults.headers[method] = utils.merge(DEFAULT_CONTENT_TYPE);
+  	});
+
+  	defaults_1 = defaults;
+  	return defaults_1;
   }
 
-  var isURLSameOrigin = platform.isStandardBrowserEnv ?
-
-  // Standard browser envs have full support of the APIs needed to test
-  // whether the request URL is of the same origin as current location.
-    (function standardBrowserEnv() {
-      const msie = /(msie|trident)/i.test(navigator.userAgent);
-      const urlParsingNode = document.createElement('a');
-      let originURL;
-
-      /**
-      * Parse a URL to discover it's components
-      *
-      * @param {String} url The URL to be parsed
-      * @returns {Object}
-      */
-      function resolveURL(url) {
-        let href = url;
-
-        if (msie) {
-          // IE needs attribute set twice to normalize properties
-          urlParsingNode.setAttribute('href', href);
-          href = urlParsingNode.href;
-        }
-
-        urlParsingNode.setAttribute('href', href);
-
-        // urlParsingNode provides the UrlUtils interface - http://url.spec.whatwg.org/#urlutils
-        return {
-          href: urlParsingNode.href,
-          protocol: urlParsingNode.protocol ? urlParsingNode.protocol.replace(/:$/, '') : '',
-          host: urlParsingNode.host,
-          search: urlParsingNode.search ? urlParsingNode.search.replace(/^\?/, '') : '',
-          hash: urlParsingNode.hash ? urlParsingNode.hash.replace(/^#/, '') : '',
-          hostname: urlParsingNode.hostname,
-          port: urlParsingNode.port,
-          pathname: (urlParsingNode.pathname.charAt(0) === '/') ?
-            urlParsingNode.pathname :
-            '/' + urlParsingNode.pathname
-        };
-      }
-
-      originURL = resolveURL(window.location.href);
-
-      /**
-      * Determine if a URL shares the same origin as the current location
-      *
-      * @param {String} requestURL The URL to test
-      * @returns {boolean} True if URL shares the same origin, otherwise false
-      */
-      return function isURLSameOrigin(requestURL) {
-        const parsed = (utils.isString(requestURL)) ? resolveURL(requestURL) : requestURL;
-        return (parsed.protocol === originURL.protocol &&
-            parsed.host === originURL.host);
-      };
-    })() :
-
-    // Non standard browser envs (web workers, react-native) lack needed support.
-    (function nonStandardBrowserEnv() {
-      return function isURLSameOrigin() {
-        return true;
-      };
-    })();
-
-  /**
-   * A `CanceledError` is an object that is thrown when an operation is canceled.
-   *
-   * @param {string=} message The message.
-   * @param {Object=} config The config.
-   * @param {Object=} request The request.
-   *
-   * @returns {CanceledError} The created error.
-   */
-  function CanceledError(message, config, request) {
-    // eslint-disable-next-line no-eq-null,eqeqeq
-    AxiosError.call(this, message == null ? 'canceled' : message, AxiosError.ERR_CANCELED, config, request);
-    this.name = 'CanceledError';
-  }
-
-  utils.inherits(CanceledError, AxiosError, {
-    __CANCEL__: true
-  });
-
-  function parseProtocol(url) {
-    const match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url);
-    return match && match[1] || '';
-  }
-
-  // RawAxiosHeaders whose duplicates are ignored by node
-  // c.f. https://nodejs.org/api/http.html#http_message_headers
-  const ignoreDuplicateOf = utils.toObjectSet([
-    'age', 'authorization', 'content-length', 'content-type', 'etag',
-    'expires', 'from', 'host', 'if-modified-since', 'if-unmodified-since',
-    'last-modified', 'location', 'max-forwards', 'proxy-authorization',
-    'referer', 'retry-after', 'user-agent'
-  ]);
-
-  /**
-   * Parse headers into an object
-   *
-   * ```
-   * Date: Wed, 27 Aug 2014 08:58:49 GMT
-   * Content-Type: application/json
-   * Connection: keep-alive
-   * Transfer-Encoding: chunked
-   * ```
-   *
-   * @param {String} rawHeaders Headers needing to be parsed
-   *
-   * @returns {Object} Headers parsed into an object
-   */
-  var parseHeaders = rawHeaders => {
-    const parsed = {};
-    let key;
-    let val;
-    let i;
-
-    rawHeaders && rawHeaders.split('\n').forEach(function parser(line) {
-      i = line.indexOf(':');
-      key = line.substring(0, i).trim().toLowerCase();
-      val = line.substring(i + 1).trim();
-
-      if (!key || (parsed[key] && ignoreDuplicateOf[key])) {
-        return;
-      }
-
-      if (key === 'set-cookie') {
-        if (parsed[key]) {
-          parsed[key].push(val);
-        } else {
-          parsed[key] = [val];
-        }
-      } else {
-        parsed[key] = parsed[key] ? parsed[key] + ', ' + val : val;
-      }
-    });
-
-    return parsed;
-  };
-
-  const $internals = Symbol('internals');
-  const $defaults = Symbol('defaults');
-
-  function normalizeHeader(header) {
-    return header && String(header).trim().toLowerCase();
-  }
-
-  function normalizeValue(value) {
-    if (value === false || value == null) {
-      return value;
-    }
-
-    return utils.isArray(value) ? value.map(normalizeValue) : String(value);
-  }
-
-  function parseTokens(str) {
-    const tokens = Object.create(null);
-    const tokensRE = /([^\s,;=]+)\s*(?:=\s*([^,;]+))?/g;
-    let match;
-
-    while ((match = tokensRE.exec(str))) {
-      tokens[match[1]] = match[2];
-    }
-
-    return tokens;
-  }
-
-  function matchHeaderValue(context, value, header, filter) {
-    if (utils.isFunction(filter)) {
-      return filter.call(this, value, header);
-    }
-
-    if (!utils.isString(value)) return;
-
-    if (utils.isString(filter)) {
-      return value.indexOf(filter) !== -1;
-    }
-
-    if (utils.isRegExp(filter)) {
-      return filter.test(value);
-    }
-  }
-
-  function formatHeader(header) {
-    return header.trim()
-      .toLowerCase().replace(/([a-z\d])(\w*)/g, (w, char, str) => {
-        return char.toUpperCase() + str;
-      });
-  }
-
-  function buildAccessors(obj, header) {
-    const accessorName = utils.toCamelCase(' ' + header);
-
-    ['get', 'set', 'has'].forEach(methodName => {
-      Object.defineProperty(obj, methodName + accessorName, {
-        value: function(arg1, arg2, arg3) {
-          return this[methodName].call(this, header, arg1, arg2, arg3);
-        },
-        configurable: true
-      });
-    });
-  }
-
-  function findKey(obj, key) {
-    key = key.toLowerCase();
-    const keys = Object.keys(obj);
-    let i = keys.length;
-    let _key;
-    while (i-- > 0) {
-      _key = keys[i];
-      if (key === _key.toLowerCase()) {
-        return _key;
-      }
-    }
-    return null;
-  }
-
-  function AxiosHeaders(headers, defaults) {
-    headers && this.set(headers);
-    this[$defaults] = defaults || null;
-  }
-
-  Object.assign(AxiosHeaders.prototype, {
-    set: function(header, valueOrRewrite, rewrite) {
-      const self = this;
-
-      function setHeader(_value, _header, _rewrite) {
-        const lHeader = normalizeHeader(_header);
-
-        if (!lHeader) {
-          throw new Error('header name must be a non-empty string');
-        }
-
-        const key = findKey(self, lHeader);
-
-        if (key && _rewrite !== true && (self[key] === false || _rewrite === false)) {
-          return;
-        }
-
-        self[key || _header] = normalizeValue(_value);
-      }
-
-      if (utils.isPlainObject(header)) {
-        utils.forEach(header, (_value, _header) => {
-          setHeader(_value, _header, valueOrRewrite);
-        });
-      } else {
-        setHeader(valueOrRewrite, header, rewrite);
-      }
-
-      return this;
-    },
-
-    get: function(header, parser) {
-      header = normalizeHeader(header);
-
-      if (!header) return undefined;
-
-      const key = findKey(this, header);
-
-      if (key) {
-        const value = this[key];
-
-        if (!parser) {
-          return value;
-        }
-
-        if (parser === true) {
-          return parseTokens(value);
-        }
-
-        if (utils.isFunction(parser)) {
-          return parser.call(this, value, key);
-        }
-
-        if (utils.isRegExp(parser)) {
-          return parser.exec(value);
-        }
-
-        throw new TypeError('parser must be boolean|regexp|function');
-      }
-    },
-
-    has: function(header, matcher) {
-      header = normalizeHeader(header);
-
-      if (header) {
-        const key = findKey(this, header);
-
-        return !!(key && (!matcher || matchHeaderValue(this, this[key], key, matcher)));
-      }
-
-      return false;
-    },
-
-    delete: function(header, matcher) {
-      const self = this;
-      let deleted = false;
-
-      function deleteHeader(_header) {
-        _header = normalizeHeader(_header);
-
-        if (_header) {
-          const key = findKey(self, _header);
-
-          if (key && (!matcher || matchHeaderValue(self, self[key], key, matcher))) {
-            delete self[key];
-
-            deleted = true;
-          }
-        }
-      }
-
-      if (utils.isArray(header)) {
-        header.forEach(deleteHeader);
-      } else {
-        deleteHeader(header);
-      }
-
-      return deleted;
-    },
-
-    clear: function() {
-      return Object.keys(this).forEach(this.delete.bind(this));
-    },
-
-    normalize: function(format) {
-      const self = this;
-      const headers = {};
-
-      utils.forEach(this, (value, header) => {
-        const key = findKey(headers, header);
-
-        if (key) {
-          self[key] = normalizeValue(value);
-          delete self[header];
-          return;
-        }
-
-        const normalized = format ? formatHeader(header) : String(header).trim();
-
-        if (normalized !== header) {
-          delete self[header];
-        }
-
-        self[normalized] = normalizeValue(value);
-
-        headers[normalized] = true;
-      });
-
-      return this;
-    },
-
-    toJSON: function(asStrings) {
-      const obj = Object.create(null);
-
-      utils.forEach(Object.assign({}, this[$defaults] || null, this),
-        (value, header) => {
-          if (value == null || value === false) return;
-          obj[header] = asStrings && utils.isArray(value) ? value.join(', ') : value;
-        });
-
-      return obj;
-    }
-  });
-
-  Object.assign(AxiosHeaders, {
-    from: function(thing) {
-      if (utils.isString(thing)) {
-        return new this(parseHeaders(thing));
-      }
-      return thing instanceof this ? thing : new this(thing);
-    },
-
-    accessor: function(header) {
-      const internals = this[$internals] = (this[$internals] = {
-        accessors: {}
-      });
-
-      const accessors = internals.accessors;
-      const prototype = this.prototype;
-
-      function defineAccessor(_header) {
-        const lHeader = normalizeHeader(_header);
-
-        if (!accessors[lHeader]) {
-          buildAccessors(prototype, _header);
-          accessors[lHeader] = true;
-        }
-      }
-
-      utils.isArray(header) ? header.forEach(defineAccessor) : defineAccessor(header);
-
-      return this;
-    }
-  });
-
-  AxiosHeaders.accessor(['Content-Type', 'Content-Length', 'Accept', 'Accept-Encoding', 'User-Agent']);
-
-  utils.freezeMethods(AxiosHeaders.prototype);
-  utils.freezeMethods(AxiosHeaders);
-
-  /**
-   * Calculate data maxRate
-   * @param {Number} [samplesCount= 10]
-   * @param {Number} [min= 1000]
-   * @returns {Function}
-   */
-  function speedometer(samplesCount, min) {
-    samplesCount = samplesCount || 10;
-    const bytes = new Array(samplesCount);
-    const timestamps = new Array(samplesCount);
-    let head = 0;
-    let tail = 0;
-    let firstSampleTS;
-
-    min = min !== undefined ? min : 1000;
-
-    return function push(chunkLength) {
-      const now = Date.now();
-
-      const startedAt = timestamps[tail];
-
-      if (!firstSampleTS) {
-        firstSampleTS = now;
-      }
-
-      bytes[head] = chunkLength;
-      timestamps[head] = now;
-
-      let i = tail;
-      let bytesCount = 0;
-
-      while (i !== head) {
-        bytesCount += bytes[i++];
-        i = i % samplesCount;
-      }
-
-      head = (head + 1) % samplesCount;
-
-      if (head === tail) {
-        tail = (tail + 1) % samplesCount;
-      }
-
-      if (now - firstSampleTS < min) {
-        return;
-      }
-
-      const passed = startedAt && now - startedAt;
-
-      return  passed ? Math.round(bytesCount * 1000 / passed) : undefined;
-    };
-  }
-
-  function progressEventReducer(listener, isDownloadStream) {
-    let bytesNotified = 0;
-    const _speedometer = speedometer(50, 250);
-
-    return e => {
-      const loaded = e.loaded;
-      const total = e.lengthComputable ? e.total : undefined;
-      const progressBytes = loaded - bytesNotified;
-      const rate = _speedometer(progressBytes);
-      const inRange = loaded <= total;
-
-      bytesNotified = loaded;
-
-      const data = {
-        loaded,
-        total,
-        progress: total ? (loaded / total) : undefined,
-        bytes: progressBytes,
-        rate: rate ? rate : undefined,
-        estimated: rate && total && inRange ? (total - loaded) / rate : undefined
-      };
-
-      data[isDownloadStream ? 'download' : 'upload'] = true;
-
-      listener(data);
-    };
-  }
-
-  function xhrAdapter(config) {
-    return new Promise(function dispatchXhrRequest(resolve, reject) {
-      let requestData = config.data;
-      const requestHeaders = AxiosHeaders.from(config.headers).normalize();
-      const responseType = config.responseType;
-      let onCanceled;
-      function done() {
-        if (config.cancelToken) {
-          config.cancelToken.unsubscribe(onCanceled);
-        }
-
-        if (config.signal) {
-          config.signal.removeEventListener('abort', onCanceled);
-        }
-      }
-
-      if (utils.isFormData(requestData) && platform.isStandardBrowserEnv) {
-        requestHeaders.setContentType(false); // Let the browser set it
-      }
-
-      let request = new XMLHttpRequest();
-
-      // HTTP basic authentication
-      if (config.auth) {
-        const username = config.auth.username || '';
-        const password = config.auth.password ? unescape(encodeURIComponent(config.auth.password)) : '';
-        requestHeaders.set('Authorization', 'Basic ' + btoa(username + ':' + password));
-      }
-
-      const fullPath = buildFullPath(config.baseURL, config.url);
-
-      request.open(config.method.toUpperCase(), buildURL(fullPath, config.params, config.paramsSerializer), true);
-
-      // Set the request timeout in MS
-      request.timeout = config.timeout;
-
-      function onloadend() {
-        if (!request) {
-          return;
-        }
-        // Prepare the response
-        const responseHeaders = AxiosHeaders.from(
-          'getAllResponseHeaders' in request && request.getAllResponseHeaders()
-        );
-        const responseData = !responseType || responseType === 'text' ||  responseType === 'json' ?
-          request.responseText : request.response;
-        const response = {
-          data: responseData,
-          status: request.status,
-          statusText: request.statusText,
-          headers: responseHeaders,
-          config,
-          request
-        };
-
-        settle(function _resolve(value) {
-          resolve(value);
-          done();
-        }, function _reject(err) {
-          reject(err);
-          done();
-        }, response);
-
-        // Clean up request
-        request = null;
-      }
-
-      if ('onloadend' in request) {
-        // Use onloadend if available
-        request.onloadend = onloadend;
-      } else {
-        // Listen for ready state to emulate onloadend
-        request.onreadystatechange = function handleLoad() {
-          if (!request || request.readyState !== 4) {
-            return;
-          }
-
-          // The request errored out and we didn't get a response, this will be
-          // handled by onerror instead
-          // With one exception: request that using file: protocol, most browsers
-          // will return status as 0 even though it's a successful request
-          if (request.status === 0 && !(request.responseURL && request.responseURL.indexOf('file:') === 0)) {
-            return;
-          }
-          // readystate handler is calling before onerror or ontimeout handlers,
-          // so we should call onloadend on the next 'tick'
-          setTimeout(onloadend);
-        };
-      }
-
-      // Handle browser request cancellation (as opposed to a manual cancellation)
-      request.onabort = function handleAbort() {
-        if (!request) {
-          return;
-        }
-
-        reject(new AxiosError('Request aborted', AxiosError.ECONNABORTED, config, request));
-
-        // Clean up request
-        request = null;
-      };
-
-      // Handle low level network errors
-      request.onerror = function handleError() {
-        // Real errors are hidden from us by the browser
-        // onerror should only fire if it's a network error
-        reject(new AxiosError('Network Error', AxiosError.ERR_NETWORK, config, request));
-
-        // Clean up request
-        request = null;
-      };
-
-      // Handle timeout
-      request.ontimeout = function handleTimeout() {
-        let timeoutErrorMessage = config.timeout ? 'timeout of ' + config.timeout + 'ms exceeded' : 'timeout exceeded';
-        const transitional = config.transitional || transitionalDefaults;
-        if (config.timeoutErrorMessage) {
-          timeoutErrorMessage = config.timeoutErrorMessage;
-        }
-        reject(new AxiosError(
-          timeoutErrorMessage,
-          transitional.clarifyTimeoutError ? AxiosError.ETIMEDOUT : AxiosError.ECONNABORTED,
-          config,
-          request));
-
-        // Clean up request
-        request = null;
-      };
-
-      // Add xsrf header
-      // This is only done if running in a standard browser environment.
-      // Specifically not if we're in a web worker, or react-native.
-      if (platform.isStandardBrowserEnv) {
-        // Add xsrf header
-        const xsrfValue = (config.withCredentials || isURLSameOrigin(fullPath))
-          && config.xsrfCookieName && cookies.read(config.xsrfCookieName);
-
-        if (xsrfValue) {
-          requestHeaders.set(config.xsrfHeaderName, xsrfValue);
-        }
-      }
-
-      // Remove Content-Type if data is undefined
-      requestData === undefined && requestHeaders.setContentType(null);
-
-      // Add headers to the request
-      if ('setRequestHeader' in request) {
-        utils.forEach(requestHeaders.toJSON(), function setRequestHeader(val, key) {
-          request.setRequestHeader(key, val);
-        });
-      }
-
-      // Add withCredentials to request if needed
-      if (!utils.isUndefined(config.withCredentials)) {
-        request.withCredentials = !!config.withCredentials;
-      }
-
-      // Add responseType to request if needed
-      if (responseType && responseType !== 'json') {
-        request.responseType = config.responseType;
-      }
-
-      // Handle progress if needed
-      if (typeof config.onDownloadProgress === 'function') {
-        request.addEventListener('progress', progressEventReducer(config.onDownloadProgress, true));
-      }
-
-      // Not all browsers support upload events
-      if (typeof config.onUploadProgress === 'function' && request.upload) {
-        request.upload.addEventListener('progress', progressEventReducer(config.onUploadProgress));
-      }
-
-      if (config.cancelToken || config.signal) {
-        // Handle cancellation
-        // eslint-disable-next-line func-names
-        onCanceled = cancel => {
-          if (!request) {
-            return;
-          }
-          reject(!cancel || cancel.type ? new CanceledError(null, config, request) : cancel);
-          request.abort();
-          request = null;
-        };
-
-        config.cancelToken && config.cancelToken.subscribe(onCanceled);
-        if (config.signal) {
-          config.signal.aborted ? onCanceled() : config.signal.addEventListener('abort', onCanceled);
-        }
-      }
-
-      const protocol = parseProtocol(fullPath);
-
-      if (protocol && platform.protocols.indexOf(protocol) === -1) {
-        reject(new AxiosError('Unsupported protocol ' + protocol + ':', AxiosError.ERR_BAD_REQUEST, config));
-        return;
-      }
-
-
-      // Send the request
-      request.send(requestData || null);
-    });
-  }
-
-  const adapters = {
-    http: xhrAdapter,
-    xhr: xhrAdapter
-  };
-
-  var adapters$1 = {
-    getAdapter: (nameOrAdapter) => {
-      if(utils.isString(nameOrAdapter)){
-        const adapter = adapters[nameOrAdapter];
-
-        if (!nameOrAdapter) {
-          throw Error(
-            utils.hasOwnProp(nameOrAdapter) ?
-              `Adapter '${nameOrAdapter}' is not available in the build` :
-              `Can not resolve adapter '${nameOrAdapter}'`
-          );
-        }
-
-        return adapter
-      }
-
-      if (!utils.isFunction(nameOrAdapter)) {
-        throw new TypeError('adapter is not a function');
-      }
-
-      return nameOrAdapter;
-    },
-    adapters
-  };
-
-  const DEFAULT_CONTENT_TYPE = {
-    'Content-Type': 'application/x-www-form-urlencoded'
-  };
-
-  /**
-   * If the browser has an XMLHttpRequest object, use the XHR adapter, otherwise use the HTTP
-   * adapter
-   *
-   * @returns {Function}
-   */
-  function getDefaultAdapter() {
-    let adapter;
-    if (typeof XMLHttpRequest !== 'undefined') {
-      // For browsers use XHR adapter
-      adapter = adapters$1.getAdapter('xhr');
-    } else if (typeof process !== 'undefined' && utils.kindOf(process) === 'process') {
-      // For node use HTTP adapter
-      adapter = adapters$1.getAdapter('http');
-    }
-    return adapter;
-  }
-
-  /**
-   * It takes a string, tries to parse it, and if it fails, it returns the stringified version
-   * of the input
-   *
-   * @param {any} rawValue - The value to be stringified.
-   * @param {Function} parser - A function that parses a string into a JavaScript object.
-   * @param {Function} encoder - A function that takes a value and returns a string.
-   *
-   * @returns {string} A stringified version of the rawValue.
-   */
-  function stringifySafely(rawValue, parser, encoder) {
-    if (utils.isString(rawValue)) {
-      try {
-        (parser || JSON.parse)(rawValue);
-        return utils.trim(rawValue);
-      } catch (e) {
-        if (e.name !== 'SyntaxError') {
-          throw e;
-        }
-      }
-    }
-
-    return (encoder || JSON.stringify)(rawValue);
-  }
-
-  const defaults = {
-
-    transitional: transitionalDefaults,
-
-    adapter: getDefaultAdapter(),
-
-    transformRequest: [function transformRequest(data, headers) {
-      const contentType = headers.getContentType() || '';
-      const hasJSONContentType = contentType.indexOf('application/json') > -1;
-      const isObjectPayload = utils.isObject(data);
-
-      if (isObjectPayload && utils.isHTMLForm(data)) {
-        data = new FormData(data);
-      }
-
-      const isFormData = utils.isFormData(data);
-
-      if (isFormData) {
-        if (!hasJSONContentType) {
-          return data;
-        }
-        return hasJSONContentType ? JSON.stringify(formDataToJSON(data)) : data;
-      }
-
-      if (utils.isArrayBuffer(data) ||
-        utils.isBuffer(data) ||
-        utils.isStream(data) ||
-        utils.isFile(data) ||
-        utils.isBlob(data)
-      ) {
-        return data;
-      }
-      if (utils.isArrayBufferView(data)) {
-        return data.buffer;
-      }
-      if (utils.isURLSearchParams(data)) {
-        headers.setContentType('application/x-www-form-urlencoded;charset=utf-8', false);
-        return data.toString();
-      }
-
-      let isFileList;
-
-      if (isObjectPayload) {
-        if (contentType.indexOf('application/x-www-form-urlencoded') > -1) {
-          return toURLEncodedForm(data, this.formSerializer).toString();
-        }
-
-        if ((isFileList = utils.isFileList(data)) || contentType.indexOf('multipart/form-data') > -1) {
-          const _FormData = this.env && this.env.FormData;
-
-          return toFormData(
-            isFileList ? {'files[]': data} : data,
-            _FormData && new _FormData(),
-            this.formSerializer
-          );
-        }
-      }
-
-      if (isObjectPayload || hasJSONContentType ) {
-        headers.setContentType('application/json', false);
-        return stringifySafely(data);
-      }
-
-      return data;
-    }],
-
-    transformResponse: [function transformResponse(data) {
-      const transitional = this.transitional || defaults.transitional;
-      const forcedJSONParsing = transitional && transitional.forcedJSONParsing;
-      const JSONRequested = this.responseType === 'json';
-
-      if (data && utils.isString(data) && ((forcedJSONParsing && !this.responseType) || JSONRequested)) {
-        const silentJSONParsing = transitional && transitional.silentJSONParsing;
-        const strictJSONParsing = !silentJSONParsing && JSONRequested;
-
-        try {
-          return JSON.parse(data);
-        } catch (e) {
-          if (strictJSONParsing) {
-            if (e.name === 'SyntaxError') {
-              throw AxiosError.from(e, AxiosError.ERR_BAD_RESPONSE, this, null, this.response);
-            }
-            throw e;
-          }
-        }
-      }
-
-      return data;
-    }],
-
-    /**
-     * A timeout in milliseconds to abort a request. If set to 0 (default) a
-     * timeout is not created.
-     */
-    timeout: 0,
-
-    xsrfCookieName: 'XSRF-TOKEN',
-    xsrfHeaderName: 'X-XSRF-TOKEN',
-
-    maxContentLength: -1,
-    maxBodyLength: -1,
-
-    env: {
-      FormData: platform.classes.FormData,
-      Blob: platform.classes.Blob
-    },
-
-    validateStatus: function validateStatus(status) {
-      return status >= 200 && status < 300;
-    },
-
-    headers: {
-      common: {
-        'Accept': 'application/json, text/plain, */*'
-      }
-    }
-  };
-
-  utils.forEach(['delete', 'get', 'head'], function forEachMethodNoData(method) {
-    defaults.headers[method] = {};
-  });
-
-  utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
-    defaults.headers[method] = utils.merge(DEFAULT_CONTENT_TYPE);
-  });
+  var utils$4 = utils$8;
+  var defaults$2 = requireDefaults();
 
   /**
    * Transform the data for a request or a response
    *
+   * @param {Object|String} data The data to be transformed
+   * @param {Array} headers The headers for the request or response
    * @param {Array|Function} fns A single function or Array of functions
-   * @param {?Object} response The response object
-   *
    * @returns {*} The resulting transformed data
    */
-  function transformData(fns, response) {
-    const config = this || defaults;
-    const context = response || config;
-    const headers = AxiosHeaders.from(context.headers);
-    let data = context.data;
-
-    utils.forEach(fns, function transform(fn) {
-      data = fn.call(config, data, headers.normalize(), response ? response.status : undefined);
+  var transformData$1 = function transformData(data, headers, fns) {
+    var context = this || defaults$2;
+    /*eslint no-param-reassign:0*/
+    utils$4.forEach(fns, function transform(fn) {
+      data = fn.call(context, data, headers);
     });
 
-    headers.normalize();
-
     return data;
+  };
+
+  var isCancel$1;
+  var hasRequiredIsCancel;
+
+  function requireIsCancel () {
+  	if (hasRequiredIsCancel) return isCancel$1;
+  	hasRequiredIsCancel = 1;
+
+  	isCancel$1 = function isCancel(value) {
+  	  return !!(value && value.__CANCEL__);
+  	};
+  	return isCancel$1;
   }
 
-  function isCancel(value) {
-    return !!(value && value.__CANCEL__);
-  }
+  var utils$3 = utils$8;
+  var transformData = transformData$1;
+  var isCancel = requireIsCancel();
+  var defaults$1 = requireDefaults();
+  var Cancel = requireCancel();
 
   /**
-   * Throws a `CanceledError` if cancellation has been requested.
-   *
-   * @param {Object} config The config that is to be used for the request
-   *
-   * @returns {void}
+   * Throws a `Cancel` if cancellation has been requested.
    */
   function throwIfCancellationRequested(config) {
     if (config.cancelToken) {
@@ -2448,7 +1459,7 @@
     }
 
     if (config.signal && config.signal.aborted) {
-      throw new CanceledError();
+      throw new Cancel('canceled');
     }
   }
 
@@ -2456,21 +1467,37 @@
    * Dispatch a request to the server using the configured adapter.
    *
    * @param {object} config The config that is to be used for the request
-   *
    * @returns {Promise} The Promise to be fulfilled
    */
-  function dispatchRequest(config) {
+  var dispatchRequest$1 = function dispatchRequest(config) {
     throwIfCancellationRequested(config);
 
-    config.headers = AxiosHeaders.from(config.headers);
+    // Ensure headers exist
+    config.headers = config.headers || {};
 
     // Transform request data
     config.data = transformData.call(
       config,
+      config.data,
+      config.headers,
       config.transformRequest
     );
 
-    const adapter = config.adapter || defaults.adapter;
+    // Flatten headers
+    config.headers = utils$3.merge(
+      config.headers.common || {},
+      config.headers[config.method] || {},
+      config.headers
+    );
+
+    utils$3.forEach(
+      ['delete', 'get', 'head', 'post', 'put', 'patch', 'common'],
+      function cleanHeaderConfig(method) {
+        delete config.headers[method];
+      }
+    );
+
+    var adapter = config.adapter || defaults$1.adapter;
 
     return adapter(config).then(function onAdapterResolution(response) {
       throwIfCancellationRequested(config);
@@ -2478,11 +1505,10 @@
       // Transform response data
       response.data = transformData.call(
         config,
-        config.transformResponse,
-        response
+        response.data,
+        response.headers,
+        config.transformResponse
       );
-
-      response.headers = AxiosHeaders.from(response.headers);
 
       return response;
     }, function onAdapterRejection(reason) {
@@ -2493,16 +1519,18 @@
         if (reason && reason.response) {
           reason.response.data = transformData.call(
             config,
-            config.transformResponse,
-            reason.response
+            reason.response.data,
+            reason.response.headers,
+            config.transformResponse
           );
-          reason.response.headers = AxiosHeaders.from(reason.response.headers);
         }
       }
 
       return Promise.reject(reason);
     });
-  }
+  };
+
+  var utils$2 = utils$8;
 
   /**
    * Config-specific merge-function which creates a new config-object
@@ -2510,20 +1538,19 @@
    *
    * @param {Object} config1
    * @param {Object} config2
-   *
    * @returns {Object} New object resulting from merging config2 to config1
    */
-  function mergeConfig(config1, config2) {
+  var mergeConfig$2 = function mergeConfig(config1, config2) {
     // eslint-disable-next-line no-param-reassign
     config2 = config2 || {};
-    const config = {};
+    var config = {};
 
     function getMergedValue(target, source) {
-      if (utils.isPlainObject(target) && utils.isPlainObject(source)) {
-        return utils.merge(target, source);
-      } else if (utils.isPlainObject(source)) {
-        return utils.merge({}, source);
-      } else if (utils.isArray(source)) {
+      if (utils$2.isPlainObject(target) && utils$2.isPlainObject(source)) {
+        return utils$2.merge(target, source);
+      } else if (utils$2.isPlainObject(source)) {
+        return utils$2.merge({}, source);
+      } else if (utils$2.isArray(source)) {
         return source.slice();
       }
       return source;
@@ -2531,25 +1558,25 @@
 
     // eslint-disable-next-line consistent-return
     function mergeDeepProperties(prop) {
-      if (!utils.isUndefined(config2[prop])) {
+      if (!utils$2.isUndefined(config2[prop])) {
         return getMergedValue(config1[prop], config2[prop]);
-      } else if (!utils.isUndefined(config1[prop])) {
+      } else if (!utils$2.isUndefined(config1[prop])) {
         return getMergedValue(undefined, config1[prop]);
       }
     }
 
     // eslint-disable-next-line consistent-return
     function valueFromConfig2(prop) {
-      if (!utils.isUndefined(config2[prop])) {
+      if (!utils$2.isUndefined(config2[prop])) {
         return getMergedValue(undefined, config2[prop]);
       }
     }
 
     // eslint-disable-next-line consistent-return
     function defaultToConfig2(prop) {
-      if (!utils.isUndefined(config2[prop])) {
+      if (!utils$2.isUndefined(config2[prop])) {
         return getMergedValue(undefined, config2[prop]);
-      } else if (!utils.isUndefined(config1[prop])) {
+      } else if (!utils$2.isUndefined(config1[prop])) {
         return getMergedValue(undefined, config1[prop]);
       }
     }
@@ -2563,7 +1590,7 @@
       }
     }
 
-    const mergeMap = {
+    var mergeMap = {
       'url': valueFromConfig2,
       'method': valueFromConfig2,
       'data': valueFromConfig2,
@@ -2583,7 +1610,6 @@
       'decompress': defaultToConfig2,
       'maxContentLength': defaultToConfig2,
       'maxBodyLength': defaultToConfig2,
-      'beforeRedirect': defaultToConfig2,
       'transport': defaultToConfig2,
       'httpAgent': defaultToConfig2,
       'httpsAgent': defaultToConfig2,
@@ -2593,49 +1619,56 @@
       'validateStatus': mergeDirectKeys
     };
 
-    utils.forEach(Object.keys(config1).concat(Object.keys(config2)), function computeConfigValue(prop) {
-      const merge = mergeMap[prop] || mergeDeepProperties;
-      const configValue = merge(prop);
-      (utils.isUndefined(configValue) && merge !== mergeDirectKeys) || (config[prop] = configValue);
+    utils$2.forEach(Object.keys(config1).concat(Object.keys(config2)), function computeConfigValue(prop) {
+      var merge = mergeMap[prop] || mergeDeepProperties;
+      var configValue = merge(prop);
+      (utils$2.isUndefined(configValue) && merge !== mergeDirectKeys) || (config[prop] = configValue);
     });
 
     return config;
+  };
+
+  var data;
+  var hasRequiredData;
+
+  function requireData () {
+  	if (hasRequiredData) return data;
+  	hasRequiredData = 1;
+  	data = {
+  	  "version": "0.23.0"
+  	};
+  	return data;
   }
 
-  const VERSION = "1.1.3";
+  var VERSION = requireData().version;
 
-  const validators = {};
+  var validators$1 = {};
 
   // eslint-disable-next-line func-names
-  ['object', 'boolean', 'number', 'function', 'string', 'symbol'].forEach((type, i) => {
-    validators[type] = function validator(thing) {
+  ['object', 'boolean', 'number', 'function', 'string', 'symbol'].forEach(function(type, i) {
+    validators$1[type] = function validator(thing) {
       return typeof thing === type || 'a' + (i < 1 ? 'n ' : ' ') + type;
     };
   });
 
-  const deprecatedWarnings = {};
+  var deprecatedWarnings = {};
 
   /**
    * Transitional option validator
-   *
    * @param {function|boolean?} validator - set to false if the transitional option has been removed
    * @param {string?} version - deprecated version / removed since version
    * @param {string?} message - some message with additional info
-   *
    * @returns {function}
    */
-  validators.transitional = function transitional(validator, version, message) {
+  validators$1.transitional = function transitional(validator, version, message) {
     function formatMessage(opt, desc) {
       return '[Axios v' + VERSION + '] Transitional option \'' + opt + '\'' + desc + (message ? '. ' + message : '');
     }
 
     // eslint-disable-next-line func-names
-    return (value, opt, opts) => {
+    return function(value, opt, opts) {
       if (validator === false) {
-        throw new AxiosError(
-          formatMessage(opt, ' has been removed' + (version ? ' in ' + version : '')),
-          AxiosError.ERR_DEPRECATED
-        );
+        throw new Error(formatMessage(opt, ' has been removed' + (version ? ' in ' + version : '')));
       }
 
       if (version && !deprecatedWarnings[opt]) {
@@ -2655,395 +1688,388 @@
 
   /**
    * Assert object's properties type
-   *
    * @param {object} options
    * @param {object} schema
    * @param {boolean?} allowUnknown
-   *
-   * @returns {object}
    */
 
   function assertOptions(options, schema, allowUnknown) {
     if (typeof options !== 'object') {
-      throw new AxiosError('options must be an object', AxiosError.ERR_BAD_OPTION_VALUE);
+      throw new TypeError('options must be an object');
     }
-    const keys = Object.keys(options);
-    let i = keys.length;
+    var keys = Object.keys(options);
+    var i = keys.length;
     while (i-- > 0) {
-      const opt = keys[i];
-      const validator = schema[opt];
+      var opt = keys[i];
+      var validator = schema[opt];
       if (validator) {
-        const value = options[opt];
-        const result = value === undefined || validator(value, opt, options);
+        var value = options[opt];
+        var result = value === undefined || validator(value, opt, options);
         if (result !== true) {
-          throw new AxiosError('option ' + opt + ' must be ' + result, AxiosError.ERR_BAD_OPTION_VALUE);
+          throw new TypeError('option ' + opt + ' must be ' + result);
         }
         continue;
       }
       if (allowUnknown !== true) {
-        throw new AxiosError('Unknown option ' + opt, AxiosError.ERR_BAD_OPTION);
+        throw Error('Unknown option ' + opt);
       }
     }
   }
 
-  var validator = {
-    assertOptions,
-    validators
+  var validator$1 = {
+    assertOptions: assertOptions,
+    validators: validators$1
   };
 
-  const validators$1 = validator.validators;
+  var utils$1 = utils$8;
+  var buildURL = buildURL$1;
+  var InterceptorManager = InterceptorManager_1;
+  var dispatchRequest = dispatchRequest$1;
+  var mergeConfig$1 = mergeConfig$2;
+  var validator = validator$1;
 
+  var validators = validator.validators;
   /**
    * Create a new instance of Axios
    *
    * @param {Object} instanceConfig The default config for the instance
-   *
-   * @return {Axios} A new instance of Axios
    */
-  class Axios {
-    constructor(instanceConfig) {
-      this.defaults = instanceConfig;
-      this.interceptors = {
-        request: new InterceptorManager(),
-        response: new InterceptorManager()
-      };
+  function Axios$1(instanceConfig) {
+    this.defaults = instanceConfig;
+    this.interceptors = {
+      request: new InterceptorManager(),
+      response: new InterceptorManager()
+    };
+  }
+
+  /**
+   * Dispatch a request
+   *
+   * @param {Object} config The config specific for this request (merged with this.defaults)
+   */
+  Axios$1.prototype.request = function request(config) {
+    /*eslint no-param-reassign:0*/
+    // Allow for axios('example/url'[, config]) a la fetch API
+    if (typeof config === 'string') {
+      config = arguments[1] || {};
+      config.url = arguments[0];
+    } else {
+      config = config || {};
     }
 
-    /**
-     * Dispatch a request
-     *
-     * @param {String|Object} configOrUrl The config specific for this request (merged with this.defaults)
-     * @param {?Object} config
-     *
-     * @returns {Promise} The Promise to be fulfilled
-     */
-    request(configOrUrl, config) {
-      /*eslint no-param-reassign:0*/
-      // Allow for axios('example/url'[, config]) a la fetch API
-      if (typeof configOrUrl === 'string') {
-        config = config || {};
-        config.url = configOrUrl;
-      } else {
-        config = configOrUrl || {};
+    config = mergeConfig$1(this.defaults, config);
+
+    // Set config.method
+    if (config.method) {
+      config.method = config.method.toLowerCase();
+    } else if (this.defaults.method) {
+      config.method = this.defaults.method.toLowerCase();
+    } else {
+      config.method = 'get';
+    }
+
+    var transitional = config.transitional;
+
+    if (transitional !== undefined) {
+      validator.assertOptions(transitional, {
+        silentJSONParsing: validators.transitional(validators.boolean),
+        forcedJSONParsing: validators.transitional(validators.boolean),
+        clarifyTimeoutError: validators.transitional(validators.boolean)
+      }, false);
+    }
+
+    // filter out skipped interceptors
+    var requestInterceptorChain = [];
+    var synchronousRequestInterceptors = true;
+    this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
+      if (typeof interceptor.runWhen === 'function' && interceptor.runWhen(config) === false) {
+        return;
       }
 
-      config = mergeConfig(this.defaults, config);
+      synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
 
-      const {transitional, paramsSerializer} = config;
+      requestInterceptorChain.unshift(interceptor.fulfilled, interceptor.rejected);
+    });
 
-      if (transitional !== undefined) {
-        validator.assertOptions(transitional, {
-          silentJSONParsing: validators$1.transitional(validators$1.boolean),
-          forcedJSONParsing: validators$1.transitional(validators$1.boolean),
-          clarifyTimeoutError: validators$1.transitional(validators$1.boolean)
-        }, false);
-      }
+    var responseInterceptorChain = [];
+    this.interceptors.response.forEach(function pushResponseInterceptors(interceptor) {
+      responseInterceptorChain.push(interceptor.fulfilled, interceptor.rejected);
+    });
 
-      if (paramsSerializer !== undefined) {
-        validator.assertOptions(paramsSerializer, {
-          encode: validators$1.function,
-          serialize: validators$1.function
-        }, true);
-      }
+    var promise;
 
-      // Set config.method
-      config.method = (config.method || this.defaults.method || 'get').toLowerCase();
+    if (!synchronousRequestInterceptors) {
+      var chain = [dispatchRequest, undefined];
 
-      // Flatten headers
-      const defaultHeaders = config.headers && utils.merge(
-        config.headers.common,
-        config.headers[config.method]
-      );
+      Array.prototype.unshift.apply(chain, requestInterceptorChain);
+      chain = chain.concat(responseInterceptorChain);
 
-      defaultHeaders && utils.forEach(
-        ['delete', 'get', 'head', 'post', 'put', 'patch', 'common'],
-        function cleanHeaderConfig(method) {
-          delete config.headers[method];
-        }
-      );
-
-      config.headers = new AxiosHeaders(config.headers, defaultHeaders);
-
-      // filter out skipped interceptors
-      const requestInterceptorChain = [];
-      let synchronousRequestInterceptors = true;
-      this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
-        if (typeof interceptor.runWhen === 'function' && interceptor.runWhen(config) === false) {
-          return;
-        }
-
-        synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
-
-        requestInterceptorChain.unshift(interceptor.fulfilled, interceptor.rejected);
-      });
-
-      const responseInterceptorChain = [];
-      this.interceptors.response.forEach(function pushResponseInterceptors(interceptor) {
-        responseInterceptorChain.push(interceptor.fulfilled, interceptor.rejected);
-      });
-
-      let promise;
-      let i = 0;
-      let len;
-
-      if (!synchronousRequestInterceptors) {
-        const chain = [dispatchRequest.bind(this), undefined];
-        chain.unshift.apply(chain, requestInterceptorChain);
-        chain.push.apply(chain, responseInterceptorChain);
-        len = chain.length;
-
-        promise = Promise.resolve(config);
-
-        while (i < len) {
-          promise = promise.then(chain[i++], chain[i++]);
-        }
-
-        return promise;
-      }
-
-      len = requestInterceptorChain.length;
-
-      let newConfig = config;
-
-      i = 0;
-
-      while (i < len) {
-        const onFulfilled = requestInterceptorChain[i++];
-        const onRejected = requestInterceptorChain[i++];
-        try {
-          newConfig = onFulfilled(newConfig);
-        } catch (error) {
-          onRejected.call(this, error);
-          break;
-        }
-      }
-
-      try {
-        promise = dispatchRequest.call(this, newConfig);
-      } catch (error) {
-        return Promise.reject(error);
-      }
-
-      i = 0;
-      len = responseInterceptorChain.length;
-
-      while (i < len) {
-        promise = promise.then(responseInterceptorChain[i++], responseInterceptorChain[i++]);
+      promise = Promise.resolve(config);
+      while (chain.length) {
+        promise = promise.then(chain.shift(), chain.shift());
       }
 
       return promise;
     }
 
-    getUri(config) {
-      config = mergeConfig(this.defaults, config);
-      const fullPath = buildFullPath(config.baseURL, config.url);
-      return buildURL(fullPath, config.params, config.paramsSerializer);
+
+    var newConfig = config;
+    while (requestInterceptorChain.length) {
+      var onFulfilled = requestInterceptorChain.shift();
+      var onRejected = requestInterceptorChain.shift();
+      try {
+        newConfig = onFulfilled(newConfig);
+      } catch (error) {
+        onRejected(error);
+        break;
+      }
     }
-  }
+
+    try {
+      promise = dispatchRequest(newConfig);
+    } catch (error) {
+      return Promise.reject(error);
+    }
+
+    while (responseInterceptorChain.length) {
+      promise = promise.then(responseInterceptorChain.shift(), responseInterceptorChain.shift());
+    }
+
+    return promise;
+  };
+
+  Axios$1.prototype.getUri = function getUri(config) {
+    config = mergeConfig$1(this.defaults, config);
+    return buildURL(config.url, config.params, config.paramsSerializer).replace(/^\?/, '');
+  };
 
   // Provide aliases for supported request methods
-  utils.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoData(method) {
+  utils$1.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoData(method) {
     /*eslint func-names:0*/
-    Axios.prototype[method] = function(url, config) {
-      return this.request(mergeConfig(config || {}, {
-        method,
-        url,
+    Axios$1.prototype[method] = function(url, config) {
+      return this.request(mergeConfig$1(config || {}, {
+        method: method,
+        url: url,
         data: (config || {}).data
       }));
     };
   });
 
-  utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
+  utils$1.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
     /*eslint func-names:0*/
-
-    function generateHTTPMethod(isForm) {
-      return function httpMethod(url, data, config) {
-        return this.request(mergeConfig(config || {}, {
-          method,
-          headers: isForm ? {
-            'Content-Type': 'multipart/form-data'
-          } : {},
-          url,
-          data
-        }));
-      };
-    }
-
-    Axios.prototype[method] = generateHTTPMethod();
-
-    Axios.prototype[method + 'Form'] = generateHTTPMethod(true);
+    Axios$1.prototype[method] = function(url, data, config) {
+      return this.request(mergeConfig$1(config || {}, {
+        method: method,
+        url: url,
+        data: data
+      }));
+    };
   });
 
-  /**
-   * A `CancelToken` is an object that can be used to request cancellation of an operation.
-   *
-   * @param {Function} executor The executor function.
-   *
-   * @returns {CancelToken}
-   */
-  class CancelToken {
-    constructor(executor) {
-      if (typeof executor !== 'function') {
-        throw new TypeError('executor must be a function.');
-      }
+  var Axios_1 = Axios$1;
 
-      let resolvePromise;
+  var CancelToken_1;
+  var hasRequiredCancelToken;
 
-      this.promise = new Promise(function promiseExecutor(resolve) {
-        resolvePromise = resolve;
-      });
+  function requireCancelToken () {
+  	if (hasRequiredCancelToken) return CancelToken_1;
+  	hasRequiredCancelToken = 1;
 
-      const token = this;
+  	var Cancel = requireCancel();
 
-      // eslint-disable-next-line func-names
-      this.promise.then(cancel => {
-        if (!token._listeners) return;
+  	/**
+  	 * A `CancelToken` is an object that can be used to request cancellation of an operation.
+  	 *
+  	 * @class
+  	 * @param {Function} executor The executor function.
+  	 */
+  	function CancelToken(executor) {
+  	  if (typeof executor !== 'function') {
+  	    throw new TypeError('executor must be a function.');
+  	  }
 
-        let i = token._listeners.length;
+  	  var resolvePromise;
 
-        while (i-- > 0) {
-          token._listeners[i](cancel);
-        }
-        token._listeners = null;
-      });
+  	  this.promise = new Promise(function promiseExecutor(resolve) {
+  	    resolvePromise = resolve;
+  	  });
 
-      // eslint-disable-next-line func-names
-      this.promise.then = onfulfilled => {
-        let _resolve;
-        // eslint-disable-next-line func-names
-        const promise = new Promise(resolve => {
-          token.subscribe(resolve);
-          _resolve = resolve;
-        }).then(onfulfilled);
+  	  var token = this;
 
-        promise.cancel = function reject() {
-          token.unsubscribe(_resolve);
-        };
+  	  // eslint-disable-next-line func-names
+  	  this.promise.then(function(cancel) {
+  	    if (!token._listeners) return;
 
-        return promise;
-      };
+  	    var i;
+  	    var l = token._listeners.length;
 
-      executor(function cancel(message, config, request) {
-        if (token.reason) {
-          // Cancellation has already been requested
-          return;
-        }
+  	    for (i = 0; i < l; i++) {
+  	      token._listeners[i](cancel);
+  	    }
+  	    token._listeners = null;
+  	  });
 
-        token.reason = new CanceledError(message, config, request);
-        resolvePromise(token.reason);
-      });
-    }
+  	  // eslint-disable-next-line func-names
+  	  this.promise.then = function(onfulfilled) {
+  	    var _resolve;
+  	    // eslint-disable-next-line func-names
+  	    var promise = new Promise(function(resolve) {
+  	      token.subscribe(resolve);
+  	      _resolve = resolve;
+  	    }).then(onfulfilled);
 
-    /**
-     * Throws a `CanceledError` if cancellation has been requested.
-     */
-    throwIfRequested() {
-      if (this.reason) {
-        throw this.reason;
-      }
-    }
+  	    promise.cancel = function reject() {
+  	      token.unsubscribe(_resolve);
+  	    };
 
-    /**
-     * Subscribe to the cancel signal
-     */
+  	    return promise;
+  	  };
 
-    subscribe(listener) {
-      if (this.reason) {
-        listener(this.reason);
-        return;
-      }
+  	  executor(function cancel(message) {
+  	    if (token.reason) {
+  	      // Cancellation has already been requested
+  	      return;
+  	    }
 
-      if (this._listeners) {
-        this._listeners.push(listener);
-      } else {
-        this._listeners = [listener];
-      }
-    }
+  	    token.reason = new Cancel(message);
+  	    resolvePromise(token.reason);
+  	  });
+  	}
 
-    /**
-     * Unsubscribe from the cancel signal
-     */
+  	/**
+  	 * Throws a `Cancel` if cancellation has been requested.
+  	 */
+  	CancelToken.prototype.throwIfRequested = function throwIfRequested() {
+  	  if (this.reason) {
+  	    throw this.reason;
+  	  }
+  	};
 
-    unsubscribe(listener) {
-      if (!this._listeners) {
-        return;
-      }
-      const index = this._listeners.indexOf(listener);
-      if (index !== -1) {
-        this._listeners.splice(index, 1);
-      }
-    }
+  	/**
+  	 * Subscribe to the cancel signal
+  	 */
 
-    /**
-     * Returns an object that contains a new `CancelToken` and a function that, when called,
-     * cancels the `CancelToken`.
-     */
-    static source() {
-      let cancel;
-      const token = new CancelToken(function executor(c) {
-        cancel = c;
-      });
-      return {
-        token,
-        cancel
-      };
-    }
+  	CancelToken.prototype.subscribe = function subscribe(listener) {
+  	  if (this.reason) {
+  	    listener(this.reason);
+  	    return;
+  	  }
+
+  	  if (this._listeners) {
+  	    this._listeners.push(listener);
+  	  } else {
+  	    this._listeners = [listener];
+  	  }
+  	};
+
+  	/**
+  	 * Unsubscribe from the cancel signal
+  	 */
+
+  	CancelToken.prototype.unsubscribe = function unsubscribe(listener) {
+  	  if (!this._listeners) {
+  	    return;
+  	  }
+  	  var index = this._listeners.indexOf(listener);
+  	  if (index !== -1) {
+  	    this._listeners.splice(index, 1);
+  	  }
+  	};
+
+  	/**
+  	 * Returns an object that contains a new `CancelToken` and a function that, when called,
+  	 * cancels the `CancelToken`.
+  	 */
+  	CancelToken.source = function source() {
+  	  var cancel;
+  	  var token = new CancelToken(function executor(c) {
+  	    cancel = c;
+  	  });
+  	  return {
+  	    token: token,
+  	    cancel: cancel
+  	  };
+  	};
+
+  	CancelToken_1 = CancelToken;
+  	return CancelToken_1;
   }
 
-  /**
-   * Syntactic sugar for invoking a function and expanding an array for arguments.
-   *
-   * Common use case would be to use `Function.prototype.apply`.
-   *
-   *  ```js
-   *  function f(x, y, z) {}
-   *  var args = [1, 2, 3];
-   *  f.apply(null, args);
-   *  ```
-   *
-   * With `spread` this example can be re-written.
-   *
-   *  ```js
-   *  spread(function(x, y, z) {})([1, 2, 3]);
-   *  ```
-   *
-   * @param {Function} callback
-   *
-   * @returns {Function}
-   */
-  function spread(callback) {
-    return function wrap(arr) {
-      return callback.apply(null, arr);
-    };
+  var spread;
+  var hasRequiredSpread;
+
+  function requireSpread () {
+  	if (hasRequiredSpread) return spread;
+  	hasRequiredSpread = 1;
+
+  	/**
+  	 * Syntactic sugar for invoking a function and expanding an array for arguments.
+  	 *
+  	 * Common use case would be to use `Function.prototype.apply`.
+  	 *
+  	 *  ```js
+  	 *  function f(x, y, z) {}
+  	 *  var args = [1, 2, 3];
+  	 *  f.apply(null, args);
+  	 *  ```
+  	 *
+  	 * With `spread` this example can be re-written.
+  	 *
+  	 *  ```js
+  	 *  spread(function(x, y, z) {})([1, 2, 3]);
+  	 *  ```
+  	 *
+  	 * @param {Function} callback
+  	 * @returns {Function}
+  	 */
+  	spread = function spread(callback) {
+  	  return function wrap(arr) {
+  	    return callback.apply(null, arr);
+  	  };
+  	};
+  	return spread;
   }
 
-  /**
-   * Determines whether the payload is an error thrown by Axios
-   *
-   * @param {*} payload The value to test
-   *
-   * @returns {boolean} True if the payload is an error thrown by Axios, otherwise false
-   */
-  function isAxiosError(payload) {
-    return utils.isObject(payload) && (payload.isAxiosError === true);
+  var isAxiosError;
+  var hasRequiredIsAxiosError;
+
+  function requireIsAxiosError () {
+  	if (hasRequiredIsAxiosError) return isAxiosError;
+  	hasRequiredIsAxiosError = 1;
+
+  	/**
+  	 * Determines whether the payload is an error thrown by Axios
+  	 *
+  	 * @param {*} payload The value to test
+  	 * @returns {boolean} True if the payload is an error thrown by Axios, otherwise false
+  	 */
+  	isAxiosError = function isAxiosError(payload) {
+  	  return (typeof payload === 'object') && (payload.isAxiosError === true);
+  	};
+  	return isAxiosError;
   }
+
+  var utils = utils$8;
+  var bind = bind$2;
+  var Axios = Axios_1;
+  var mergeConfig = mergeConfig$2;
+  var defaults = requireDefaults();
 
   /**
    * Create an instance of Axios
    *
    * @param {Object} defaultConfig The default config for the instance
-   *
-   * @returns {Axios} A new instance of Axios
+   * @return {Axios} A new instance of Axios
    */
   function createInstance(defaultConfig) {
-    const context = new Axios(defaultConfig);
-    const instance = bind(Axios.prototype.request, context);
+    var context = new Axios(defaultConfig);
+    var instance = bind(Axios.prototype.request, context);
 
     // Copy axios.prototype to instance
-    utils.extend(instance, Axios.prototype, context, {allOwnKeys: true});
+    utils.extend(instance, Axios.prototype, context);
 
     // Copy context to instance
-    utils.extend(instance, context, null, {allOwnKeys: true});
+    utils.extend(instance, context);
 
     // Factory for creating new instances
     instance.create = function create(instanceConfig) {
@@ -3054,37 +2080,36 @@
   }
 
   // Create the default instance to be exported
-  const axios = createInstance(defaults);
+  var axios$2 = createInstance(defaults);
 
   // Expose Axios class to allow class inheritance
-  axios.Axios = Axios;
+  axios$2.Axios = Axios;
 
   // Expose Cancel & CancelToken
-  axios.CanceledError = CanceledError;
-  axios.CancelToken = CancelToken;
-  axios.isCancel = isCancel;
-  axios.VERSION = VERSION;
-  axios.toFormData = toFormData;
-
-  // Expose AxiosError class
-  axios.AxiosError = AxiosError;
-
-  // alias for CanceledError for backward compatibility
-  axios.Cancel = axios.CanceledError;
+  axios$2.Cancel = requireCancel();
+  axios$2.CancelToken = requireCancelToken();
+  axios$2.isCancel = requireIsCancel();
+  axios$2.VERSION = requireData().version;
 
   // Expose all/spread
-  axios.all = function all(promises) {
+  axios$2.all = function all(promises) {
     return Promise.all(promises);
   };
-
-  axios.spread = spread;
+  axios$2.spread = requireSpread();
 
   // Expose isAxiosError
-  axios.isAxiosError = isAxiosError;
+  axios$2.isAxiosError = requireIsAxiosError();
 
-  axios.formToJSON = thing => {
-    return formDataToJSON(utils.isHTMLForm(thing) ? new FormData(thing) : thing);
-  };
+  axios$3.exports = axios$2;
+
+  // Allow use of default import syntax in TypeScript
+  axios$3.exports.default = axios$2;
+
+  var axiosExports = axios$3.exports;
+
+  var axios = axiosExports;
+
+  var axios$1 = /*@__PURE__*/getDefaultExportFromCjs(axios);
 
   var ScrollBarWidget = /*#__PURE__*/function () {
     function ScrollBarWidget(x, y, width, height) {
@@ -3287,7 +2312,7 @@
         this.lineSort = settings.lineSort;
         this.lineSort.sort(this.dataSet);
         this.colorScheme = settings.colorScheme;
-        this.colorComparisonLineIndex = this.dataSet.germplasmList.findIndex(function (germplasm) {
+        this.colorComparisonLineIndex = this.dataSet.germplasmListFiltered.findIndex(function (germplasm) {
           return germplasm.name == settings.colorReference;
         });
         this.colorScheme.setComparisonLineIndex(this.colorComparisonLineIndex);
@@ -3313,6 +2338,7 @@
         this.drawingContext.drawImage(this.backBuffer, 0, 0);
         var xPos = this.markerIndexUnderMouse * this.boxSize - this.translatedX;
         var yPos = this.lineUnderMouse * this.boxSize - yWiggle;
+        this.markerRange(markerStart, markerEnd);
         this.renderCrosshair(markerStart, xPos, germplasmStart, yPos);
         this.highlightMarker(dataWidth, markerStart, markerEnd, xPos);
         this.highlightLineName(germplasmStart, yPos);
@@ -3324,6 +2350,15 @@
           this.drawingContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
         this.drawingContext.restore();
+      }
+    }, {
+      key: "markerRange",
+      value: function markerRange(markerStartIndex, markerEndIndex) {
+        var markerrange = document.getElementById("markerRange");
+        var markerStart = this.dataSet.markerOn(this.selectedChromosome, markerStartIndex).marker;
+        var markerEnd = this.dataSet.markerOn(this.selectedChromosome, markerEndIndex - 1).marker;
+        var text = markerStart.position + "<br>" + markerEnd.position;
+        markerrange.innerHTML = text;
       }
     }, {
       key: "calcMapMarkerPos",
@@ -3400,7 +2435,7 @@
           this.drawingContext.clip(region);
           this.drawingContext.fillStyle = '#F00';
           this.drawingContext.font = this.font;
-          var name = this.dataSet.germplasmList[this.lineIndexUnderMouse].name;
+          var name = this.dataSet.germplasmListFiltered[this.lineIndexUnderMouse].name;
           var y = yPos + (this.boxSize - this.fontSize / 2);
           this.drawingContext.fillText(name, 0, y);
           this.drawingContext.restore();
@@ -3421,7 +2456,7 @@
           this.drawingContext.clip(region);
           this.drawingContext.fillStyle = '#F00';
           this.drawingContext.font = this.font;
-          var germplasm = this.dataSet.germplasmList[this.lineIndexUnderMouse];
+          var germplasm = this.dataSet.germplasmListFiltered[this.lineIndexUnderMouse];
           if (germplasm.phenotype !== undefined) {
             var xPos = 0;
             this.displayTraits.forEach(function (traitName, traitIndex) {
@@ -3455,7 +2490,7 @@
           this.drawingContext.clip(region);
           this.drawingContext.fillStyle = '#F00';
           this.drawingContext.font = this.font;
-          var name = this.dataSet.germplasmList[this.lineIndexUnderMouse].name;
+          var name = this.dataSet.germplasmListFiltered[this.lineIndexUnderMouse].name;
           var y = yPos + (this.boxSize - this.fontSize / 2);
           var score = this.lineSort.getScore(name);
           this.drawingContext.fillText(score.toFixed(2), this.scorePadding, y);
@@ -3500,12 +2535,15 @@
       value: function renderMouseOverText() {
         if (this.mouseOverText !== undefined) {
           this.drawingContext.save();
-          this.drawingContext.font = this.font;
+          // this.drawingContext.font = this.font;
+          this.drawingContext.fontSize = 20;
           var textWidth = this.drawingContext.measureText(this.mouseOverText).width;
-          var textHeight = this.fontSize;
+          //const textHeight = this.fontSize;
+          var textHeight = this.drawingContext.fontSize;
           var padding = 4;
           var boxWidth = textWidth + 2 * padding;
-          var boxHeight = textHeight + 2 * padding;
+          var boxHeight = textHeight - 4; // + 2*padding;
+
           var _this$mouseOverPositi = _slicedToArray(this.mouseOverPosition, 2),
             xBase = _this$mouseOverPositi[0],
             yBase = _this$mouseOverPositi[1];
@@ -3914,10 +2952,10 @@
         var mouseYPos = y - this.mapCanvasHeight;
         if (mouseXPos > 0 && mouseXPos < this.alleleCanvasWidth() && mouseXPos < this.maxDataWidth()) {
           // Calculate the marker's index in the dataset and get the marker data
-          var markerIndex = Math.floor((this.translatedX + mouseXPos) / this.boxSize);
-          var marker = this.dataSet.markerOn(this.selectedChromosome, markerIndex);
-          this.markerUnderMouse = marker.marker;
-          this.markerIndexUnderMouse = marker.markerIndex;
+          var _markerIndex = Math.floor((this.translatedX + mouseXPos) / this.boxSize);
+          var _marker = this.dataSet.markerOn(this.selectedChromosome, _markerIndex);
+          this.markerUnderMouse = _marker.marker;
+          this.markerIndexUnderMouse = _marker.markerIndex;
         } else {
           this.markerUnderMouse = undefined;
           this.markerIndexUnderMouse = undefined;
@@ -3951,6 +2989,81 @@
               this.mouseOverPosition = [x, y];
             }
           } else */
+          // Individual's name tooltip
+          if (!this.dataSet.hasTraits() && x <= this.nameCanvasWidth || this.dataSet.hasTraits() && x <= this.nameCanvasWidth + this.traitValuesCanvasWidth) {
+            var _germplasm = this.dataSet.germplasmListFiltered[this.lineIndexUnderMouse];
+            this.mouseOverText = _germplasm.name;
+            this.mouseOverPosition = [x, y];
+          }
+          // Genotype tooltip
+          if (!this.dataSet.hasTraits() && !this.lineSort.hasScore && x > this.nameCanvasWidth || !this.dataSet.hasTraits() && this.lineSort.hasScore && x > this.nameCanvasWidth + this.scoreCanvasWidth || this.dataSet.hasTraits() && !this.lineSort.hasScore && x > this.nameCanvasWidth + this.traitValuesCanvasWidth || this.dataSet.hasTraits() && this.lineSort.hasScore && x > this.nameCanvasWidth + this.traitValuesCanvasWidth + this.scoreCanvasWidth) {
+            var _germplasm = this.dataSet.germplasmListFiltered[this.lineIndexUnderMouse];
+            var markerIndex = Math.floor((this.translatedX + mouseXPos) / this.boxSize);
+            var marker = this.dataSet.markerOn(this.selectedChromosome, markerIndex);
+            this.markerUnderMouse = marker.marker;
+            if (marker.marker !== undefined) {
+              this.mouseOverText = "Line : ".concat(_germplasm.name);
+              this.mouseOverText += "\nMarker : ".concat(marker.marker.name, " (").concat(marker.marker.position, ")");
+              /*//TODO : do this switch in a new function
+              var geno = 'A';
+              switch (this.dataSet.genotypeFor(this.lineIndexUnderMouse, this.selectedChromosome, markerIndex)) {
+                case 0:
+                  geno = 'N/A';
+                  break;
+                case 1:
+                  geno = 'A/T';
+                  break;
+                case 2:
+                  geno = 'A';
+                  break;
+                case 3:
+                  geno = 'T';
+                  break;
+                case 4:
+                  geno = 'C/T';
+                  break;
+                case 5:
+                  geno = 'C';
+                  break;
+                case 6:
+                  geno = 'C/G';
+                  break;
+                case 7:
+                  geno = 'T/A';
+                  break;
+                case 8:
+                  geno = 'T/C';
+                  break;
+                case 9:
+                  geno = 'G/T';
+                  break;
+                case 10:
+                  geno = 'G';
+                  break;
+                case 11:
+                  geno = 'A/G';
+                  break;
+                case 12:
+                  geno = 'C/A';
+                  break;
+                case 13:
+                  geno = 'T/G';
+                  break;
+                case 14:
+                  geno = 'A/C';
+                  break;
+                case 15:
+                  geno = 'G/A';
+                  break;
+                case 16:
+                  geno = 'G/C';
+                  break;
+              }
+              this.mouseOverText += `\r\nGenotype : ${geno}`;*/
+              this.mouseOverPosition = [x, y];
+            }
+          }
+          // Trait tooltip
           if (this.dataSet.hasTraits() && x < this.traitValuesCanvasWidth / 1.1 /*accounting for apennded blank space*/) {
             var xPos = 0,
               traitIndex = undefined;
@@ -3963,16 +3076,18 @@
                 break;
               }
             }
-            var germplasm = this.dataSet.germplasmList[this.lineIndexUnderMouse];
+            var germplasm = this.dataSet.germplasmListFiltered[this.lineIndexUnderMouse];
             var trait = this.dataSet.getTrait(this.displayTraits[traitIndex]);
             var traitValue = trait.getValue(germplasm.getPhenotype(trait.name));
             if (traitValue !== undefined) {
               this.mouseOverText = trait.name + " : " + traitValue.toString();
               this.mouseOverPosition = [x, y];
             }
-          } else if (this.lineSort.hasScore && x > this.nameCanvasWidth + this.traitValuesCanvasWidth && x < this.nameCanvasWidth + this.traitValuesCanvasWidth + this.scoreCanvasWidth) {
-            var _germplasm = this.dataSet.germplasmList[this.lineIndexUnderMouse];
-            var score = this.lineSort.getScore(_germplasm.name);
+          }
+          // Score tooltip
+          else if (this.lineSort.hasScore && x > this.nameCanvasWidth + this.traitValuesCanvasWidth && x < this.nameCanvasWidth + this.traitValuesCanvasWidth + this.scoreCanvasWidth) {
+            var _germplasm2 = this.dataSet.germplasmListFiltered[this.lineIndexUnderMouse];
+            var score = this.lineSort.getScore(_germplasm2.name);
             this.mouseOverText = "Sort score : " + score.toString();
             this.mouseOverPosition = [x, y];
           }
@@ -4008,7 +3123,7 @@
         var _this5 = this;
         // Find the longest germplasm name and adjust the width of the germplasm name
         // rendering area accordingly
-        var germplasm = this.dataSet.germplasmList;
+        var germplasm = this.dataSet.germplasmListFiltered;
         var longestName = Math.max.apply(Math, _toConsumableArray(germplasm.map(function (g) {
           return _this5.backContext.measureText(g.name).width;
         })));
@@ -4086,6 +3201,8 @@
         } else {
           this.translatedY = Math.min(this.translatedY * zoomFactor, this.maxDataHeight() - this.alleleCanvasHeight());
         }
+        var zoomcontroller = document.getElementById('zoom-control');
+        zoomcontroller.value = size;
         this.updateScrollBars();
         this.prerender(true);
         return this.currentPosition();
@@ -4108,7 +3225,7 @@
       key: "visibilityWindow",
       value: function visibilityWindow() {
         var markers = Math.min(this.alleleCanvasWidth() / this.boxSize, this.dataSet.markerCountOn(this.selectedChromosome));
-        var germplasms = Math.min(this.alleleCanvasHeight() / this.boxSize, this.dataSet.germplasmList.length);
+        var germplasms = Math.min(this.alleleCanvasHeight() / this.boxSize, this.dataSet.germplasmListFiltered.length);
         return {
           markers: markers,
           germplasms: germplasms
@@ -4152,7 +3269,7 @@
     }, {
       key: "setColorComparisonLine",
       value: function setColorComparisonLine(comparedName) {
-        this.colorComparisonLineIndex = this.dataSet.germplasmList.findIndex(function (germplasm) {
+        this.colorComparisonLineIndex = this.dataSet.germplasmListFiltered.findIndex(function (germplasm) {
           return germplasm.name == comparedName;
         });
         this.colorScheme.setComparisonLineIndex(this.colorComparisonLineIndex);
@@ -4184,6 +3301,10 @@
     }, {
       key: "setDisplayTraits",
       value: function setDisplayTraits(displayTraits) {
+        if (displayTraits.length > 10) {
+          alert("Too many traits selected, only showing the first 10");
+          displayTraits = displayTraits.slice(0, 10);
+        }
         this.displayTraits = displayTraits;
         this.updateCanvasWidths();
         this.prerender(true);
@@ -4204,7 +3325,7 @@
       key: "sortLines",
       value: function sortLines() {
         // Save the color comparison line to restore it after sorting
-        var colorComparisonGermplasm = this.dataSet.germplasmList[this.colorComparisonLineIndex];
+        var colorComparisonGermplasm = this.dataSet.germplasmListFiltered[this.colorComparisonLineIndex];
         this.lineSort.sort(this.dataSet);
         if (colorComparisonGermplasm != null) this.setColorComparisonLine(colorComparisonGermplasm.name);
         this.prerender(true);
@@ -4356,7 +3477,7 @@
       value: function renderingScale(width, height) {
         return {
           markersPerPixel: this.dataSet.markerCountOn(this.selectedChromosome) / width,
-          germplasmsPerPixel: this.dataSet.germplasmList.length / height
+          germplasmsPerPixel: this.dataSet.germplasmListFiltered.length / height
         };
       }
 
@@ -4366,8 +3487,8 @@
       key: "createImage",
       value: function createImage(imageData, highlightReference) {
         var scale = this.renderingScale(imageData.width, imageData.height);
-        var germplasmsPerPixel = this.dataSet.germplasmList.length / imageData.height;
-        var markersPerPixel = this.dataSet.markerCountOn(this.selectedChromosome) / imageData.width;
+        this.dataSet.germplasmListFiltered.length / imageData.height;
+        this.dataSet.markerCountOn(this.selectedChromosome) / imageData.width;
         for (var x = 0; x < imageData.width; x += 1) {
           for (var y = 0; y < imageData.height; y += 1) {
             var marker = Math.floor(x * scale.markersPerPixel);
@@ -4411,7 +3532,7 @@
 
         // Clamp within the canvas (no position < 0 or > number of markers or germplasms)
         var cornerMarker = Math.min(Math.max(0, Math.floor(centerMarker - visibilityWindow.markers / 2)), this.dataSet.markerCountOn(this.selectedChromosome) - visibilityWindow.markers);
-        var cornerGermplasm = Math.min(Math.max(Math.floor(centerGermplasm - visibilityWindow.germplasms / 2), 0), this.dataSet.germplasmList.length - visibilityWindow.germplasms);
+        var cornerGermplasm = Math.min(Math.max(Math.floor(centerGermplasm - visibilityWindow.germplasms / 2), 0), this.dataSet.germplasmListFiltered.length - visibilityWindow.germplasms);
         this.windowRect = this.windowFromPosition(cornerMarker, cornerGermplasm, visibilityWindow);
         this.prerender(false);
         return {
@@ -4481,7 +3602,7 @@
       value: function toDataURL(type, encoderOptions) {
         var tmpCanvas = document.createElement('canvas');
         tmpCanvas.width = this.dataSet.markerCountOn(this.selectedChromosome);
-        tmpCanvas.height = this.dataSet.germplasmList.length;
+        tmpCanvas.height = this.dataSet.germplasmListFiltered.length;
         var tmpContext = tmpCanvas.getContext('2d');
         tmpContext.fillStyle = 'white';
         tmpContext.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
@@ -4686,7 +3807,7 @@
     _createClass(AlphabeticLineSort, [{
       key: "sort",
       value: function sort(dataSet) {
-        dataSet.germplasmList.sort(function (a, b) {
+        dataSet.germplasmListFiltered.sort(function (a, b) {
           return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
         });
       }
@@ -4771,7 +3892,7 @@
     if (!chromosomes || chromosomes.length == 0) return 0;
     var score = 0;
     var markerCount = 0;
-    var referenceGermplasm = dataSet.germplasmList[referenceIndex];
+    var referenceGermplasm = dataSet.germplasmListFiltered[referenceIndex];
     var _iterator = _createForOfIteratorHelper(chromosomes),
       _step;
     try {
@@ -4809,14 +3930,14 @@
       key: "sort",
       value: function sort(dataSet) {
         var _this = this;
-        var referenceIndex = dataSet.germplasmList.findIndex(function (germplasm) {
+        var referenceIndex = dataSet.germplasmListFiltered.findIndex(function (germplasm) {
           return germplasm.name == _this.referenceName;
         });
         this.scoreMap = new Map();
-        for (var comparedIndex in dataSet.germplasmList) {
-          this.scoreMap.set(dataSet.germplasmList[comparedIndex].name, germplasmSimilarityScore(dataSet, referenceIndex, comparedIndex, this.chromosomeIndices));
+        for (var comparedIndex in dataSet.germplasmListFiltered) {
+          this.scoreMap.set(dataSet.germplasmListFiltered[comparedIndex].name, germplasmSimilarityScore(dataSet, referenceIndex, comparedIndex, this.chromosomeIndices));
         }
-        dataSet.germplasmList.sort(function (a, b) {
+        dataSet.germplasmListFiltered.sort(function (a, b) {
           return _this.scoreMap.get(b.name) - _this.scoreMap.get(a.name);
         });
       }
@@ -4847,7 +3968,7 @@
     _createClass(ImportingOrderLineSort, [{
       key: "sort",
       value: function sort(dataSet) {
-        dataSet.germplasmList.sort(function (a, b) {
+        dataSet.germplasmListFiltered.sort(function (a, b) {
           return dataSet.importingOrder.indexOf(a.name) - dataSet.importingOrder.indexOf(b.name);
         });
       }
@@ -4865,8 +3986,8 @@
       key: "sort",
       value: function sort(dataSet) {
         var self = this;
-        var trait = dataSet.getTrait(self.traitName);
-        dataSet.germplasmList.sort(function (a, b) {
+        dataSet.getTrait(self.traitName);
+        dataSet.germplasmListFiltered.sort(function (a, b) {
           return dataSet.importingOrder.indexOf(a.name) - dataSet.importingOrder.indexOf(b.name);
         }).sort(function (a, b) {
           if (a.phenotype === undefined) return 1;
@@ -5298,9 +4419,7 @@
           for (var traitName in settings.traitColors) {
             var trait = this.dataSet.getTrait(traitName);
             if (trait !== undefined) {
-              for (var value in settings.traitColors[traitName]) {
-                trait.setHSVColor(parseFloat(value), settings.traitColors[traitName][value]);
-              }
+              for (var value in settings.traitColors[traitName]) trait.setHSVColor(parseFloat(value), settings.traitColors[traitName][value]);
             }
           }
         }
@@ -5313,14 +4432,34 @@
         this.updateAutoWidth();
         window.addEventListener("resize", function (event) {
           _this.updateAutoWidth();
+          var settings = document.getElementById("settings");
+          var resizehandle = document.getElementById("resizeHandle");
+          var windowHeight = window.innerHeight;
+          var windowWidth = window.innerWidth;
+          _this.genotypeCanvas.width = windowWidth;
+          _this.overviewCanvas.width = windowWidth;
+          _this.genotypeCanvas.backBuffer.width = windowWidth;
+          _this.overviewCanvas.backBuffer.width = windowWidth;
+          _this.genotypeCanvas.canvas.width = windowWidth;
+          _this.overviewCanvas.canvas.width = windowWidth;
+          _this.genotypeCanvas.height = (windowHeight - settings.clientHeight - resizehandle.clientHeight) * 2 / 3;
+          _this.overviewCanvas.height = (windowHeight - settings.clientHeight - resizehandle.clientHeight) / 3;
+          _this.genotypeCanvas.backBuffer.height = (windowHeight - settings.clientHeight - resizehandle.clientHeight) * 2 / 3;
+          _this.overviewCanvas.height = (windowHeight - settings.clientHeight - resizehandle.clientHeight) / 3;
+          _this.genotypeCanvas.canvas.height = (windowHeight - settings.clientHeight - resizehandle.clientHeight) * 2 / 3;
+          _this.overviewCanvas.canvas.height = (windowHeight - settings.clientHeight - resizehandle.clientHeight) / 3;
+          _this.genotypeCanvas.verticalScrollbar = new ScrollBar(windowWidth - 20, _this.genotypeCanvas.alleleCanvasHeight() + _this.genotypeCanvas.scrollbarHeight, _this.genotypeCanvas.scrollbarWidth, _this.genotypeCanvas.alleleCanvasHeight(), true);
+          _this.genotypeCanvas.horizontalScrollbar = new ScrollBar(_this.genotypeCanvas.alleleCanvasWidth(), _this.genotypeCanvas.canvas.height, _this.genotypeCanvas.alleleCanvasWidth(), _this.genotypeCanvas.scrollbarHeight, false);
+          _this.genotypeCanvas.prerender(true);
+          _this.overviewCanvas.prerender(true);
         });
 
         // Color schemes
         var nucleotideRadio = document.getElementById('nucleotideScheme');
         if (settings.colorSchemeId == "nucleotide") nucleotideRadio.checked = true;
         nucleotideRadio.addEventListener('change', function () {
-          var lineSelect = document.getElementById('colorLineSelect');
-          lineSelect.disabled = true;
+          var lineInput = document.getElementById('colorLineInput');
+          lineInput.disabled = true;
           var colorScheme = new NucleotideColorScheme(_this.genotypeCanvas.dataSet);
           colorScheme.setupColorStamps(_this.genotypeCanvas.boxSize, _this.genotypeCanvas.font, _this.genotypeCanvas.fontSize);
           _this.genotypeCanvas.setColorScheme(colorScheme);
@@ -5329,40 +4468,48 @@
         });
         var similarityRadio = document.getElementById('similarityScheme');
         var lineSelect = document.getElementById('colorLineSelect');
+        var lineInput = document.getElementById('colorLineInput');
         if (settings.colorSchemeId == "similarity") {
           similarityRadio.checked = true;
           lineSelect.disabled = false;
-          lineSelect.value = settings.colorReference;
+          lineInput.value = settings.colorReference;
+          lineInput.disabled = false;
         }
-        similarityRadio.addEventListener('change', function () {
-          var lineSelect = document.getElementById('colorLineSelect');
-          lineSelect.disabled = false;
-          var referenceName = lineSelect.options[lineSelect.selectedIndex].value;
-          var referenceIndex = _this.genotypeCanvas.dataSet.germplasmList.findIndex(function (germplasm) {
-            return germplasm.name == referenceName;
-          });
-          var colorScheme = new SimilarityColorScheme(_this.genotypeCanvas.dataSet, referenceIndex);
-          colorScheme.setupColorStamps(_this.genotypeCanvas.boxSize, _this.genotypeCanvas.font, _this.genotypeCanvas.fontSize);
-          _this.genotypeCanvas.setColorScheme(colorScheme);
-          _this.genotypeCanvas.setColorComparisonLine(referenceName);
-          _this.overviewCanvas.setColorScheme(colorScheme);
-          _this.saveSetting("colorReference", referenceName);
-          _this.saveSetting("colorScheme", "similarity");
+        similarityRadio.addEventListener('change', function (event) {
+          _this.similaritySchemeChange(lineSelect, 0, true);
         });
-        lineSelect.addEventListener('change', function (event) {
-          var reference = event.target.options[event.target.selectedIndex].value;
-          _this.genotypeCanvas.setColorComparisonLine(reference);
+        lineInput.addEventListener('input', function (event) {
+          var reference = _this.genotypeCanvas.dataSet.germplasmListFiltered.find(function (germplasm) {
+            return germplasm.name.toLowerCase().startsWith(lineInput.value.toLowerCase());
+          });
+          if (reference !== undefined) {
+            _this.genotypeCanvas.setColorComparisonLine(reference.name);
+            _this.overviewCanvas.prerender(true);
+            _this.saveSetting("colorReference", reference.name);
+          }
+        });
+        lineInput.addEventListener('blur', function (event) {
+          var reference = _this.genotypeCanvas.dataSet.germplasmListFiltered.find(function (germplasm) {
+            return germplasm.name.toLowerCase().startsWith(lineInput.value.toLowerCase());
+          });
+          var referenceName = _this.genotypeCanvas.dataSet.germplasmListFiltered[0].name;
+          if (reference !== undefined) {
+            referenceName = reference.name;
+          }
+          _this.genotypeCanvas.setColorComparisonLine(referenceName);
           _this.overviewCanvas.prerender(true);
-          _this.saveSetting("colorReference", reference);
+          _this.saveSetting("colorReference", referenceName);
+          lineInput.value = referenceName;
         });
 
         // Sort
+        var sortLineInput = document.getElementById('sortLineInput');
         var sortLineSelect = document.getElementById('sortLineSelect');
         var sortTraitSelect = document.getElementById('sortTraitSelect');
         var importingOrderRadio = document.getElementById('importingOrderSort');
         if (settings.lineSortId == "importing") importingOrderRadio.checked = true;
         importingOrderRadio.addEventListener('change', function () {
-          sortLineSelect.disabled = true;
+          sortLineInput.disabled = true;
           if (sortTraitSelect !== null) sortTraitSelect.disabled = true;
           _this.setLineSort(new ImportingOrderLineSort());
           _this.saveSetting("sort", "importing");
@@ -5370,7 +4517,7 @@
         var alphabetOrderRadio = document.getElementById('alphabeticSort');
         if (settings.lineSortId == "alphabetic") alphabetOrderRadio.checked = true;
         alphabetOrderRadio.addEventListener('change', function () {
-          sortLineSelect.disabled = true;
+          sortLineInput.disabled = true;
           if (sortTraitSelect !== null) sortTraitSelect.disabled = true;
           _this.setLineSort(new AlphabeticLineSort());
           _this.saveSetting("sort", "alphabetic");
@@ -5378,23 +4525,33 @@
         var similarityOrderRadio = document.getElementById('similaritySort');
         if (settings.lineSortId == "similarity") {
           similarityOrderRadio.checked = true;
-          sortLineSelect.disabled = false;
-          sortLineSelect.value = settings.sortReference;
+          sortLineInput.disabled = false;
+          sortLineInput.value = settings.sortReference;
         }
-        similarityOrderRadio.addEventListener('change', function () {
-          sortLineSelect.disabled = false;
-          if (sortTraitSelect !== null) sortTraitSelect.disabled = true;
-          var referenceName = sortLineSelect.options[sortLineSelect.selectedIndex].value;
-          _this.setLineSort(new SimilarityLineSort(referenceName, [_this.chromosomeIndex]));
-          _this.saveSetting("sort", "similarity");
-          _this.saveSetting("sortReference", referenceName);
+        similarityOrderRadio.addEventListener('change', function (event) {
+          _this.similaritySortChange(sortLineInput, sortTraitSelect, sortLineSelect, 0, true);
         });
-        sortLineSelect.addEventListener('change', function (event) {
-          if (!sortLineSelect.disabled) {
-            var referenceName = sortLineSelect.options[sortLineSelect.selectedIndex].value;
+        sortLineInput.addEventListener('input', function (event) {
+          var reference = _this.genotypeCanvas.dataSet.germplasmListFiltered.find(function (germplasm) {
+            return germplasm.name.toLowerCase().startsWith(sortLineInput.value.toLowerCase());
+          });
+          if (reference !== undefined) {
+            var referenceName = reference.name;
             _this.setLineSort(new SimilarityLineSort(referenceName, [_this.chromosomeIndex]));
             _this.saveSetting("sortReference", referenceName);
           }
+        });
+        sortLineInput.addEventListener('blur', function (event) {
+          var reference = _this.genotypeCanvas.dataSet.germplasmListFiltered.find(function (germplasm) {
+            return germplasm.name.toLowerCase().startsWith(sortLineInput.value.toLowerCase());
+          });
+          var referenceName = _this.genotypeCanvas.dataSet.germplasmListFiltered[0].name;
+          if (reference !== undefined) {
+            referenceName = reference.name;
+          }
+          _this.setLineSort(new SimilarityLineSort(referenceName, [_this.chromosomeIndex]));
+          _this.saveSetting("sortReference", referenceName);
+          sortLineInput.value = referenceName;
         });
         if (dataSet.hasTraits()) {
           var traitOrderRadio = document.getElementById('traitSort');
@@ -5404,7 +4561,7 @@
             sortTraitSelect.value = settings.sortReference;
           }
           traitOrderRadio.addEventListener('change', function () {
-            sortLineSelect.disabled = true;
+            sortLineInput.disabled = true;
             sortTraitSelect.disabled = false;
             var traitName = sortTraitSelect.options[sortTraitSelect.selectedIndex].value;
             _this.setLineSort(new TraitLineSort(traitName));
@@ -5459,9 +4616,7 @@
             }
 
             // Clear the select list
-            for (var i = paletteValueSelect.options.length - 1; i >= 0; i--) {
-              paletteValueSelect.remove(i);
-            }
+            for (var i = paletteValueSelect.options.length - 1; i >= 0; i--) paletteValueSelect.remove(i);
             var _iterator2 = _createForOfIteratorHelper(traitOptions),
               _step2;
             try {
@@ -5483,30 +4638,38 @@
           paletteTraitSelect.value = this.dataSet.traitNames[0];
           paletteTraitSelect.dispatchEvent(new Event('change'));
           paletteValueSelect.addEventListener('change', function (event) {
-            var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
-            var trait = _this.dataSet.getTrait(traitName);
-            var color = null;
-            if (trait.type == TraitType.Numerical) {
-              var index = paletteValueSelect.selectedIndex;
-              color = index == 0 ? trait.getMinColor() : trait.getMaxColor();
-            } else {
-              color = trait.getColor(paletteValueSelect.selectedIndex);
+            for (var i = paletteValueSelect.options.length - 1; i >= 0; i--) {
+              if (paletteValueSelect.options[i].selected) {
+                var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
+                var trait = _this.dataSet.getTrait(traitName);
+                var color = null;
+                if (trait.type == TraitType.Numerical) {
+                  var index = i;
+                  color = index == 0 ? trait.getMinColor() : trait.getMaxColor();
+                } else {
+                  color = trait.getColor(i);
+                }
+                paletteValueColor.value = color;
+              }
             }
-            paletteValueColor.value = color;
           });
           paletteValueSelect.dispatchEvent(new Event('change'));
           paletteValueColor.addEventListener('change', function (event) {
-            var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
-            var trait = _this.dataSet.getTrait(traitName);
-            var color = paletteValueColor.value;
-            if (trait.type == TraitType.Numerical) {
-              var index = paletteValueSelect.selectedIndex;
-              if (index == 0) trait.setMinColor(color);else trait.setMaxColor(color);
-            } else {
-              trait.setColor(paletteValueSelect.selectedIndex, color);
+            for (var i = paletteValueSelect.options.length - 1; i >= 0; i--) {
+              if (paletteValueSelect.options[i].selected) {
+                var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
+                var trait = _this.dataSet.getTrait(traitName);
+                var color = paletteValueColor.value;
+                if (trait.type == TraitType.Numerical) {
+                  var index = i;
+                  if (index == 0) trait.setMinColor(color);else trait.setMaxColor(color);
+                } else {
+                  trait.setColor(i, color);
+                }
+                _this.genotypeCanvas.prerender(true);
+                _this.saveColors();
+              }
             }
-            _this.genotypeCanvas.prerender(true);
-            _this.saveColors();
           });
           paletteResetButton.addEventListener('click', function (event) {
             var traitName = paletteTraitSelect.options[paletteTraitSelect.selectedIndex].value;
@@ -5556,13 +4719,18 @@
         this.genotypeCanvas.canvas.addEventListener('mouseleave', function () {
           _this.genotypeCanvas.mouseOver(undefined, undefined);
         });
+        this.genotypeCanvas.canvas.addEventListener('contextmenu', function (event) {
+          event.preventDefault();
+          var customContextMenu = document.getElementById("customContextMenu");
+          customContextMenu.style.left = event.pageX + "px";
+          customContextMenu.style.top = event.pageY + "px";
+          customContextMenu.style.display = "block";
+        });
 
         // Overview canvas control
         this.overviewCanvas.canvas.addEventListener('mousedown', function (event) {
           _this.setOverviewPosition(event.clientX, event.clientY);
         });
-
-        // Other events
         window.addEventListener('mouseup', function () {
           _this.draggingGenotypeCanvas = false;
           _this.draggingVerticalScrollbar = false;
@@ -5580,6 +4748,39 @@
             _this.setOverviewPosition(e.clientX, e.clientY);
           }
         });
+      }
+    }, {
+      key: "similaritySchemeChange",
+      value: function similaritySchemeChange(lineSelect, index, reset) {
+        var lineInput = document.getElementById('colorLineInput');
+        lineInput.disabled = false;
+        var referenceName = this.genotypeCanvas.dataSet.germplasmListFiltered[index].name;
+        var referenceIndex = this.genotypeCanvas.dataSet.germplasmListFiltered.findIndex(function (germplasm) {
+          return germplasm.name.startsWith(referenceName);
+        });
+        var colorScheme = new SimilarityColorScheme(this.genotypeCanvas.dataSet, referenceIndex);
+        colorScheme.setupColorStamps(this.genotypeCanvas.boxSize, this.genotypeCanvas.font, this.genotypeCanvas.fontSize);
+        this.genotypeCanvas.setColorScheme(colorScheme);
+        this.genotypeCanvas.setColorComparisonLine(referenceName);
+        this.overviewCanvas.setColorScheme(colorScheme);
+        this.saveSetting("colorReference", referenceName);
+        this.saveSetting("colorScheme", "similarity");
+        if (reset) {
+          lineInput.value = this.genotypeCanvas.dataSet.germplasmListFiltered[0].name;
+        }
+      }
+    }, {
+      key: "similaritySortChange",
+      value: function similaritySortChange(sortLineInput, sortTraitSelect, sortLineSelect, index, reset) {
+        sortLineInput.disabled = false;
+        if (sortTraitSelect !== null) sortTraitSelect.disabled = true;
+        var referenceName = this.genotypeCanvas.dataSet.germplasmListFiltered[index].name;
+        this.setLineSort(new SimilarityLineSort(referenceName, [this.chromosomeIndex]));
+        this.saveSetting("sort", "similarity");
+        this.saveSetting("sortReference", referenceName);
+        if (reset) {
+          sortLineInput.value = this.genotypeCanvas.dataSet.germplasmListFiltered[0].name;
+        }
       }
     }, {
       key: "setLineSort",
@@ -5619,6 +4820,13 @@
         this.genotypeCanvas.setChromosome(chromosomeIndex);
         this.overviewCanvas.setChromosome(chromosomeIndex);
         this.overviewCanvas.moveToPosition(0, 0, this.genotypeCanvas.visibilityWindow());
+      }
+    }, {
+      key: "findGermplasmWithLine",
+      value: function findGermplasmWithLine(input) {
+        return this.dataSet.germplasmListFiltered.filter(function (item) {
+          return item.name.toLowerCase().startsWith(input);
+        });
       }
     }, {
       key: "disableCanvas",
@@ -5758,12 +4966,15 @@
         var sortReference = this.loadSetting("sortReference");
         var colorSchemeId = this.loadSetting("colorScheme");
         var colorReference = this.loadSetting("colorReference");
-        var displayTraits = this.loadSetting("displayTraits");
         var customColors = this.loadSetting("traitColors");
+        var displayTraits = this.loadSetting("displayTraits");
+        displayTraits = displayTraits == null ? this.dataSet.traitNames : displayTraits.split(";").filter(function (x) {
+          return _this3.dataSet.traitNames == null || _this3.dataSet.traitNames.includes(x);
+        });
         var settings = {
           colorReference: colorReference,
           sortReference: sortReference,
-          displayTraits: displayTraits == null ? this.dataSet.traitNames : displayTraits.split(";"),
+          displayTraits: displayTraits != null && displayTraits.length > 10 ? [] : displayTraits,
           lineSort: new ImportingOrderLineSort(),
           lineSortId: "importing",
           colorScheme: new NucleotideColorScheme(this.dataSet),
@@ -5802,7 +5013,7 @@
             }
             break;
           case "similarity":
-            if (this.dataSet.germplasmList.find(function (germplasm) {
+            if (this.dataSet.germplasmListFiltered.find(function (germplasm) {
               return germplasm.name == sortReference;
             }) !== undefined) {
               settings.lineSort = new SimilarityLineSort(sortReference, [this.chromosomeIndex]);
@@ -5816,7 +5027,7 @@
             settings.colorSchemeId = "nucleotide";
             break;
           case "similarity":
-            var referenceIndex = this.dataSet.germplasmList.findIndex(function (germplasm) {
+            var referenceIndex = this.dataSet.germplasmListFiltered.findIndex(function (germplasm) {
               return germplasm.name == colorReference;
             });
             if (referenceIndex !== undefined && referenceIndex != -1) {
@@ -5858,13 +5069,7 @@
     return Chromosome;
   }();
 
-  function unwrapExports (x) {
-  	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
-  }
-
-  function createCommonjsModule(fn, module) {
-  	return module = { exports: {} }, fn(module, module.exports), module.exports;
-  }
+  var lib = {};
 
   //
 
@@ -5913,14 +5118,17 @@
     return true;
   };
 
-  var lib = createCommonjsModule(function (module, exports) {
   // An augmented AVL Tree where each node maintains a list of records and their search intervals.
   // Record is composed of an interval and its underlying data, sent by a client. This allows the
   // interval tree to have the same interval inserted multiple times, as long its data is different.
   // Both insertion and deletion require O(log n) time. Searching requires O(k*logn) time, where `k`
   // is the number of intervals in the output list.
-  Object.defineProperty(exports, "__esModule", { value: true });
-
+  Object.defineProperty(lib, "__esModule", { value: true });
+  lib.PreOrder = lib.ReverseInOrder = lib.InOrder = lib.IntervalTree = lib.Node = void 0;
+  var isSame = shallowequal;
+  function max(a, b) {
+      return a < b ? b : a;
+  }
   function height(node) {
       if (node === undefined) {
           return -1;
@@ -5951,7 +5159,7 @@
       };
       // Updates height value of the node. Called during insertion, rebalance, removal
       Node.prototype.updateHeight = function () {
-          this.height = Math.max(height(this.left), height(this.right)) + 1;
+          this.height = max(height(this.left), height(this.right)) + 1;
       };
       // Updates the max value of all the parents after inserting into already existing node, as well as
       // removing the node completely or removing the record of an already existing node. Starts with
@@ -5962,13 +5170,13 @@
           }
           var thisHigh = this.getNodeHigh();
           if (this.left !== undefined && this.right !== undefined) {
-              this.max = Math.max(Math.max(this.left.max, this.right.max), thisHigh);
+              this.max = max(max(this.left.max, this.right.max), thisHigh);
           }
           else if (this.left !== undefined && this.right === undefined) {
-              this.max = Math.max(this.left.max, thisHigh);
+              this.max = max(this.left.max, thisHigh);
           }
           else if (this.left === undefined && this.right !== undefined) {
-              this.max = Math.max(this.right.max, thisHigh);
+              this.max = max(this.right.max, thisHigh);
           }
           else {
               this.max = thisHigh;
@@ -6005,33 +5213,33 @@
           // Update max of left sibling (x in first case, y in second)
           var thisParentLeftHigh = left.getNodeHigh();
           if (left.left === undefined && left.right !== undefined) {
-              left.max = Math.max(thisParentLeftHigh, left.right.max);
+              left.max = max(thisParentLeftHigh, left.right.max);
           }
           else if (left.left !== undefined && left.right === undefined) {
-              left.max = Math.max(thisParentLeftHigh, left.left.max);
+              left.max = max(thisParentLeftHigh, left.left.max);
           }
           else if (left.left === undefined && left.right === undefined) {
               left.max = thisParentLeftHigh;
           }
           else {
-              left.max = Math.max(Math.max(left.left.max, left.right.max), thisParentLeftHigh);
+              left.max = max(max(left.left.max, left.right.max), thisParentLeftHigh);
           }
           // Update max of itself (z)
           var thisHigh = this.getNodeHigh();
           if (this.left === undefined && this.right !== undefined) {
-              this.max = Math.max(thisHigh, this.right.max);
+              this.max = max(thisHigh, this.right.max);
           }
           else if (this.left !== undefined && this.right === undefined) {
-              this.max = Math.max(thisHigh, this.left.max);
+              this.max = max(thisHigh, this.left.max);
           }
           else if (this.left === undefined && this.right === undefined) {
               this.max = thisHigh;
           }
           else {
-              this.max = Math.max(Math.max(this.left.max, this.right.max), thisHigh);
+              this.max = max(max(this.left.max, this.right.max), thisHigh);
           }
           // Update max of parent (y in first case, x in second)
-          parent.max = Math.max(Math.max(parent.left.max, parent.right.max), parent.getNodeHigh());
+          parent.max = max(max(parent.left.max, parent.right.max), parent.getNodeHigh());
       };
       /*
       Right-Right case:
@@ -6061,33 +5269,33 @@
           // Update max of right sibling (x in first case, y in second)
           var thisParentRightHigh = right.getNodeHigh();
           if (right.left === undefined && right.right !== undefined) {
-              right.max = Math.max(thisParentRightHigh, right.right.max);
+              right.max = max(thisParentRightHigh, right.right.max);
           }
           else if (right.left !== undefined && right.right === undefined) {
-              right.max = Math.max(thisParentRightHigh, right.left.max);
+              right.max = max(thisParentRightHigh, right.left.max);
           }
           else if (right.left === undefined && right.right === undefined) {
               right.max = thisParentRightHigh;
           }
           else {
-              right.max = Math.max(Math.max(right.left.max, right.right.max), thisParentRightHigh);
+              right.max = max(max(right.left.max, right.right.max), thisParentRightHigh);
           }
           // Update max of itself (z)
           var thisHigh = this.getNodeHigh();
           if (this.left === undefined && this.right !== undefined) {
-              this.max = Math.max(thisHigh, this.right.max);
+              this.max = max(thisHigh, this.right.max);
           }
           else if (this.left !== undefined && this.right === undefined) {
-              this.max = Math.max(thisHigh, this.left.max);
+              this.max = max(thisHigh, this.left.max);
           }
           else if (this.left === undefined && this.right === undefined) {
               this.max = thisHigh;
           }
           else {
-              this.max = Math.max(Math.max(this.left.max, this.right.max), thisHigh);
+              this.max = max(max(this.left.max, this.right.max), thisHigh);
           }
           // Update max of parent (y in first case, x in second)
-          parent.max = Math.max(Math.max(parent.left.max, right.max), parent.getNodeHigh());
+          parent.max = max(max(parent.left.max, right.max), parent.getNodeHigh());
       };
       Node.prototype._leftRotate = function () {
           var rightChild = this.right;
@@ -6334,10 +5542,12 @@
                   return this;
               }
           }
+          // Make linter happy
+          return undefined;
       };
       return Node;
   }());
-  exports.Node = Node;
+  lib.Node = Node;
   var IntervalTree = /** @class */ (function () {
       function IntervalTree() {
           this.count = 0;
@@ -6358,7 +5568,7 @@
               if (node !== undefined) {
                   // Check the records in this node if there already is the one with same low, high, data
                   for (var i = 0; i < node.records.length; i++) {
-                      if (shallowequal(node.records[i], record)) {
+                      if (isSame(node.records[i], record)) {
                           // This record is same as the one we're trying to insert; return false to indicate
                           // nothing has been inserted
                           return false;
@@ -6404,10 +5614,12 @@
                   return false;
               }
               else if (node.records.length > 1) {
-                  var removedRecord = void 0;
+                  var removedRecord 
+                  // Node with this key has 2 or more records. Find the one we need and remove it
+                  = void 0;
                   // Node with this key has 2 or more records. Find the one we need and remove it
                   for (var i = 0; i < node.records.length; i++) {
-                      if (shallowequal(node.records[i], record)) {
+                      if (isSame(node.records[i], record)) {
                           removedRecord = node.records[i];
                           node.records.splice(i, 1);
                           break;
@@ -6419,13 +5631,13 @@
                       if (record.high === node.max) {
                           var nodeHigh = node.getNodeHigh();
                           if (node.left !== undefined && node.right !== undefined) {
-                              node.max = Math.max(Math.max(node.left.max, node.right.max), nodeHigh);
+                              node.max = max(max(node.left.max, node.right.max), nodeHigh);
                           }
                           else if (node.left !== undefined && node.right === undefined) {
-                              node.max = Math.max(node.left.max, nodeHigh);
+                              node.max = max(node.left.max, nodeHigh);
                           }
                           else if (node.left === undefined && node.right !== undefined) {
-                              node.max = Math.max(node.right.max, nodeHigh);
+                              node.max = max(node.right.max, nodeHigh);
                           }
                           else {
                               node.max = nodeHigh;
@@ -6444,7 +5656,7 @@
               else if (node.records.length === 1) {
                   // Node with this key has only 1 record. Check if the remaining record in this node is
                   // actually the one we want to remove
-                  if (shallowequal(node.records[0], record)) {
+                  if (isSame(node.records[0], record)) {
                       // The remaining record is the one we want to remove. Remove the whole node from the tree
                       if (this.root.key === node.key) {
                           // We're removing the root element. Create a dummy node that will temporarily take
@@ -6492,12 +5704,19 @@
       IntervalTree.prototype.inOrder = function () {
           return new InOrder(this.root);
       };
+      IntervalTree.prototype.reverseInOrder = function () {
+          return new ReverseInOrder(this.root);
+      };
       IntervalTree.prototype.preOrder = function () {
           return new PreOrder(this.root);
       };
       return IntervalTree;
   }());
-  exports.IntervalTree = IntervalTree;
+  lib.IntervalTree = IntervalTree;
+  /**
+   * The default export just wraps the `IntervalTree`, while providing a simpler API. Check out the
+   * README for description on how to use each.
+   */
   var DataIntervalTree = /** @class */ (function () {
       function DataIntervalTree() {
           this.tree = new IntervalTree();
@@ -6514,6 +5733,9 @@
       DataIntervalTree.prototype.inOrder = function () {
           return this.tree.inOrder();
       };
+      DataIntervalTree.prototype.reverseInOrder = function () {
+          return this.tree.reverseInOrder();
+      };
       DataIntervalTree.prototype.preOrder = function () {
           return this.tree.preOrder();
       };
@@ -6521,12 +5743,12 @@
           get: function () {
               return this.tree.count;
           },
-          enumerable: true,
+          enumerable: false,
           configurable: true
       });
       return DataIntervalTree;
   }());
-  exports.default = DataIntervalTree;
+  var _default = lib.default = DataIntervalTree;
   var InOrder = /** @class */ (function () {
       function InOrder(startNode) {
           this.stack = [];
@@ -6534,6 +5756,9 @@
               this.push(startNode);
           }
       }
+      InOrder.prototype[Symbol.iterator] = function () {
+          return this;
+      };
       InOrder.prototype.next = function () {
           // Will only happen if stack is empty and pop is called
           if (this.currentNode === undefined) {
@@ -6550,9 +5775,11 @@
               };
           }
           if (this.currentNode.right !== undefined) {
+              // Can we go right?
               this.push(this.currentNode.right);
           }
           else {
+              // Otherwise go up
               // Might pop the last and set this.currentNode = undefined
               this.pop();
           }
@@ -6572,16 +5799,70 @@
       };
       return InOrder;
   }());
-  exports.InOrder = InOrder;
-  if (typeof Symbol === 'function') {
-      InOrder.prototype[Symbol.iterator] = function () { return this; };
-  }
+  lib.InOrder = InOrder;
+  var ReverseInOrder = /** @class */ (function () {
+      function ReverseInOrder(startNode) {
+          this.stack = [];
+          if (startNode !== undefined) {
+              this.push(startNode);
+          }
+      }
+      ReverseInOrder.prototype[Symbol.iterator] = function () {
+          return this;
+      };
+      ReverseInOrder.prototype.next = function () {
+          // Will only happen if stack is empty and pop is called
+          if (this.currentNode === undefined) {
+              return {
+                  done: true,
+                  value: undefined,
+              };
+          }
+          // Process this node
+          if (this.currentNode.records.length && this.i >= 0) {
+              return {
+                  done: false,
+                  value: this.currentNode.records[this.i--],
+              };
+          }
+          if (this.currentNode.left !== undefined) {
+              // Can we go left?
+              this.push(this.currentNode.left);
+          }
+          else {
+              // Otherwise go up
+              // Might pop the last and set this.currentNode = undefined
+              this.pop();
+          }
+          return this.next();
+      };
+      ReverseInOrder.prototype.push = function (node) {
+          var _a, _b, _c, _d;
+          this.currentNode = node;
+          this.i = ((_b = (_a = this.currentNode) === null || _a === void 0 ? void 0 : _a.records.length) !== null && _b !== void 0 ? _b : 0) - 1;
+          while (this.currentNode.right !== undefined) {
+              this.stack.push(this.currentNode);
+              this.currentNode = this.currentNode.right;
+              this.i = ((_d = (_c = this.currentNode) === null || _c === void 0 ? void 0 : _c.records.length) !== null && _d !== void 0 ? _d : 0) - 1;
+          }
+      };
+      ReverseInOrder.prototype.pop = function () {
+          var _a, _b;
+          this.currentNode = this.stack.pop();
+          this.i = ((_b = (_a = this.currentNode) === null || _a === void 0 ? void 0 : _a.records.length) !== null && _b !== void 0 ? _b : 0) - 1;
+      };
+      return ReverseInOrder;
+  }());
+  lib.ReverseInOrder = ReverseInOrder;
   var PreOrder = /** @class */ (function () {
       function PreOrder(startNode) {
           this.stack = [];
           this.i = 0;
           this.currentNode = startNode;
       }
+      PreOrder.prototype[Symbol.iterator] = function () {
+          return this;
+      };
       PreOrder.prototype.next = function () {
           // Will only happen if stack is empty and pop is called,
           // which only happens if there is no right node (i.e we are done)
@@ -6616,18 +5897,7 @@
       };
       return PreOrder;
   }());
-  exports.PreOrder = PreOrder;
-  if (typeof Symbol === 'function') {
-      PreOrder.prototype[Symbol.iterator] = function () { return this; };
-  }
-
-  });
-
-  var IntervalTree = unwrapExports(lib);
-  var lib_1 = lib.Node;
-  var lib_2 = lib.IntervalTree;
-  var lib_3 = lib.InOrder;
-  var lib_4 = lib.PreOrder;
+  lib.PreOrder = PreOrder;
 
   var GenomeMap = /*#__PURE__*/function () {
     function GenomeMap(chromosomes) {
@@ -6644,7 +5914,7 @@
     _createClass(GenomeMap, [{
       key: "createIntervalTree",
       value: function createIntervalTree() {
-        var tree = new IntervalTree();
+        var tree = new _default();
         var sum = 0;
         this.chromosomes.forEach(function (c) {
           var markerCount = c.markerCount();
@@ -7052,11 +6322,10 @@
       value: function createFakeMap(fileContents) {
         var _this2 = this;
         var lines = fileContents.split(/\r?\n/);
-        for (var lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
-          var line = lines[lineIndex];
-          if (!line.startsWith('#')) {
-            if (line.startsWith('Accession') || line.startsWith('\t')) {
-              var _ret = function () {
+        var _loop = function _loop() {
+            var line = lines[lineIndex];
+            if (!line.startsWith('#')) {
+              if (line.startsWith('Accession') || line.startsWith('\t')) {
                 var markers = [];
                 var markerNames = line.split('\t');
 
@@ -7073,10 +6342,13 @@
                 return {
                   v: _this2.genomeMap
                 };
-              }();
-              if (_typeof(_ret) === "object") return _ret.v;
+              }
             }
-          }
+          },
+          _ret;
+        for (var lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+          _ret = _loop();
+          if (_ret) return _ret.v;
         }
         return this.genomeMap;
       }
@@ -7172,76 +6444,76 @@
       value: function buildTraits() {
         var _this = this;
         var _loop = function _loop(traitIndex) {
-          traitName = _this.traitNames[traitIndex];
-          var experiment = _this.experiments[traitIndex]; // May be undefined
-          var values = _this.values.map(function (germplasmValues) {
-            return germplasmValues[traitIndex + 1];
-          });
-          var traitType = void 0;
-          if (traitName.includes("_#CAT")) {
-            traitType = TraitType.Category;
-            traitName = traitName.replace("_#CAT", "");
-          } else if (traitName.includes("_#NUM")) {
-            traitType = TraitType.Numerical;
-            traitName = traitName.replace("_#NUM", "");
-          } else {
-            var numValues = values.map(function (value) {
-              return parseFloat(value);
+            traitName = _this.traitNames[traitIndex];
+            var experiment = _this.experiments[traitIndex]; // May be undefined
+            var values = _this.values.map(function (germplasmValues) {
+              return germplasmValues[traitIndex + 1];
             });
-            if (numValues.some(function (value) {
-              return isNaN(value);
-            })) {
-              // At least one value is not numerical
+            var traitType;
+            if (traitName.includes("_#CAT")) {
               traitType = TraitType.Category;
-            } else {
+              traitName = traitName.replace("_#CAT", "");
+            } else if (traitName.includes("_#NUM")) {
               traitType = TraitType.Numerical;
-            }
-          }
-          traitName = traitName.trim();
-          var trait = new Trait(traitName, traitType, experiment);
-          if (traitType == TraitType.Category) {
-            var valueToIndex = new Map();
-            var valueIndex = 0;
-            var maxLength = 0;
-            values.sort();
-            var _iterator = _createForOfIteratorHelper(values),
-              _step;
-            try {
-              for (_iterator.s(); !(_step = _iterator.n()).done;) {
-                var value = _step.value;
-                if (!valueToIndex.has(value)) {
-                  valueToIndex.set(value, valueIndex);
-                  valueIndex += 1;
-                  if (value.length > maxLength) trait.longestValue = value;
-                }
+              traitName = traitName.replace("_#NUM", "");
+            } else {
+              var numValues = values.map(function (value) {
+                return parseFloat(value);
+              });
+              if (numValues.some(function (value) {
+                return isNaN(value);
+              })) {
+                // At least one value is not numerical
+                traitType = TraitType.Category;
+              } else {
+                traitType = TraitType.Numerical;
               }
-            } catch (err) {
-              _iterator.e(err);
-            } finally {
-              _iterator.f();
             }
-            _this.valueToIndex.set(traitName, valueToIndex);
-            trait.setValues(Array.from(valueToIndex.keys()));
-            trait.setScale(0, valueIndex - 1);
-          } else {
-            var _numValues = values.map(function (value) {
-              return parseFloat(value);
-            });
-            var minValue = _numValues[0],
-              maxValue = _numValues[0];
-            var _maxLength = 0;
-            _numValues.slice(1).forEach(function (value) {
-              if (value < minValue) minValue = value;
-              if (value > maxValue) maxValue = value;
-              if (value.toString().length > _maxLength) trait.longestValue = value.toString();
-            });
-            trait.setScale(minValue, maxValue);
-          }
-          _this.traits.set(traitName, trait);
-          _this.traitNames[traitIndex] = traitName;
-        };
+            traitName = traitName.trim();
+            var trait = new Trait(traitName, traitType, experiment);
+            if (traitType == TraitType.Category) {
+              var valueToIndex = new Map();
+              var valueIndex = 0;
+              var maxLength = 0;
+              values.sort();
+              var _iterator = _createForOfIteratorHelper(values),
+                _step;
+              try {
+                for (_iterator.s(); !(_step = _iterator.n()).done;) {
+                  var value = _step.value;
+                  if (!valueToIndex.has(value)) {
+                    valueToIndex.set(value, valueIndex);
+                    valueIndex += 1;
+                    if (value.length > maxLength) trait.longestValue = value;
+                  }
+                }
+              } catch (err) {
+                _iterator.e(err);
+              } finally {
+                _iterator.f();
+              }
+              _this.valueToIndex.set(traitName, valueToIndex);
+              trait.setValues(Array.from(valueToIndex.keys()));
+              trait.setScale(0, valueIndex - 1);
+            } else {
+              var _numValues = values.map(function (value) {
+                return parseFloat(value);
+              });
+              var minValue = _numValues[0],
+                maxValue = _numValues[0];
+              var _maxLength = 0;
+              _numValues.slice(1).forEach(function (value) {
+                if (value < minValue) minValue = value;
+                if (value > maxValue) maxValue = value;
+                if (value.toString().length > _maxLength) trait.longestValue = value.toString();
+              });
+              trait.setScale(minValue, maxValue);
+            }
+            _this.traits.set(traitName, trait);
+            _this.traitNames[traitIndex] = traitName;
+          },
+          traitName;
         for (var traitIndex = 0; traitIndex < this.traitNames.length; traitIndex += 1) {
-          var traitName;
           _loop(traitIndex);
         }
       }
@@ -7285,6 +6557,7 @@
       this.id = dataSetId;
       this.genomeMap = genomeMap;
       this.germplasmList = germplasmList;
+      this.germplasmListFiltered = Array.from(germplasmList);
       this.stateTable = stateTable;
       this.traits = traits;
 
@@ -7304,6 +6577,9 @@
         this.germplasmList.forEach(function (germplasm) {
           germplasm.phenotype = phenotypes.get(germplasm.name);
         });
+        this.germplasmListFiltered.forEach(function (germplasm) {
+          germplasm.phenotype = phenotypes.get(germplasm.name);
+        });
       } else {
         this.traitNames = undefined;
       }
@@ -7311,12 +6587,12 @@
     _createClass(DataSet, [{
       key: "germplasmFor",
       value: function germplasmFor(germplasmStart, germplasmEnd) {
-        return this.germplasmList.slice(germplasmStart, germplasmEnd);
+        return this.germplasmListFiltered.slice(germplasmStart, germplasmEnd);
       }
     }, {
       key: "genotypeFor",
       value: function genotypeFor(germplasm, chromosome, marker) {
-        return this.germplasmList[germplasm].genotypeData[chromosome][marker];
+        return this.germplasmListFiltered[germplasm].genotypeData[chromosome][marker];
       }
     }, {
       key: "markersToRender",
@@ -7356,7 +6632,7 @@
     }, {
       key: "lineCount",
       value: function lineCount() {
-        return this.germplasmList.length;
+        return this.germplasmListFiltered.length;
       }
     }, {
       key: "hasTraits",
@@ -7410,6 +6686,175 @@
     function setChromosome(chromosomeIndex) {
       canvasController.setChromosome(chromosomeIndex);
     }
+    function lineSearchCrosshair(index) {
+      var germplasmStart = Math.floor(genotypeCanvas.translatedY / genotypeCanvas.boxSize);
+      var yWiggle = genotypeCanvas.translatedY - germplasmStart * genotypeCanvas.boxSize;
+      var yPos = (index - germplasmStart) * genotypeCanvas.boxSize;
+      if (genotypeCanvas.translatedY === 0) {
+        yPos = index * genotypeCanvas.boxSize - yWiggle;
+      }
+      var yScrollMax = genotypeCanvas.maxCanvasHeight() - genotypeCanvas.alleleCanvasHeight();
+      if (genotypeCanvas.translatedY === yScrollMax) {
+        yPos = index * genotypeCanvas.boxSize - yScrollMax < 0 ? index * genotypeCanvas.boxSize - yWiggle : index * genotypeCanvas.boxSize - yScrollMax;
+      }
+      genotypeCanvas.drawingContext.save();
+      genotypeCanvas.drawingContext.translate(genotypeCanvas.alleleCanvasXOffset, genotypeCanvas.mapCanvasHeight);
+      genotypeCanvas.drawingContext.globalAlpha = 0.4;
+      genotypeCanvas.drawingContext.fillStyle = '#ff0';
+
+      // Clip the canvas to prevent over-drawing of the crosshair
+      var region = new Path2D();
+      region.rect(0, 0, genotypeCanvas.alleleCanvasWidth(), genotypeCanvas.alleleCanvasHeight());
+      genotypeCanvas.drawingContext.clip(region);
+      genotypeCanvas.renderHorizontalCrosshairLine(yPos);
+      genotypeCanvas.drawingContext.translate(-genotypeCanvas.alleleCanvasXOffset, -genotypeCanvas.mapCanvasHeight);
+      genotypeCanvas.drawingContext.globalAlpha = 1;
+      genotypeCanvas.drawingContext.restore();
+    }
+    function dragToLine(input, i) {
+      if (input.length > 0) {
+        var germplasms = canvasController.findGermplasmWithLine(input);
+        if (germplasms.length !== 0) {
+          var index = dataSet.germplasmListFiltered.indexOf(germplasms[i % germplasms.length]);
+          var zoomValue = document.getElementById('zoom-control').value;
+          var calc = Math.floor(index - 64 / zoomValue * 10 / 2);
+          if (calc < 0) {
+            genotypeCanvas.moveToPosition(0, 0);
+          } else {
+            genotypeCanvas.moveToPosition(0, calc);
+          }
+          genotypeCanvas.draggingOverviewCanvas = true;
+          lineSearchCrosshair(index);
+          return true;
+        }
+        return false;
+      }
+      return true;
+    }
+    function hideContextMenu() {
+      var customContextMenu = document.getElementById("customContextMenu");
+      customContextMenu.style.display = "none";
+    }
+    function createContextMenu(genotypeCanvas, canvasController) {
+      var customContextMenu = document.createElement("div");
+      customContextMenu.id = "customContextMenu";
+      customContextMenu.style.display = "none";
+      customContextMenu.style.position = "absolute";
+      customContextMenu.style.backgroundColor = "#000";
+      customContextMenu.style.color = "#fff";
+      customContextMenu.style.border = "1px solid #ccc";
+      customContextMenu.style.padding = "5px 15px";
+      customContextMenu.style.zIndex = "1000";
+      customContextMenu.style.margin = "-3px";
+      customContextMenu.style.fontFamily = 'system-ui';
+      customContextMenu.style.fontSize = '14px';
+      var option1 = document.createElement("div");
+      option1.textContent = "Color by similarity to this line";
+      option1.style.cursor = "pointer";
+      option1.addEventListener("click", function (event) {
+        var colorLineInput = document.getElementById("colorLineInput");
+        var colorLineSelect = document.getElementById("colorLineSelect");
+        var germplasmStart = Math.floor(genotypeCanvas.translatedY / genotypeCanvas.boxSize);
+        var rect = genotypeCanvas.canvas.getBoundingClientRect();
+        var y = customContextMenu.offsetTop - rect.top - 56; // 56 stands for height above the first line of the canvas
+        var index = Math.floor(y / genotypeCanvas.boxSize + germplasmStart);
+        var reference = genotypeCanvas.dataSet.germplasmListFiltered[index];
+        if (reference !== undefined) {
+          genotypeCanvas.setColorComparisonLine(reference.name);
+          canvasController.overviewCanvas.prerender(true);
+          canvasController.saveSetting("colorReference", reference.name);
+          var nucleotideScheme = document.getElementById("nucleotideScheme");
+          var similarityScheme = document.getElementById("similarityScheme");
+          nucleotideScheme.checked = false;
+          similarityScheme.checked = true;
+          colorLineInput.value = reference.name;
+          canvasController.similaritySchemeChange(colorLineSelect, index, false);
+        }
+        hideContextMenu();
+      });
+      option1.addEventListener("mouseover", function () {
+        option1.style.backgroundColor = "grey";
+      });
+      option1.addEventListener("mouseout", function () {
+        option1.style.backgroundColor = "";
+      });
+      var option2 = document.createElement("div");
+      option2.textContent = "Sort by similarity to this line";
+      option2.style.cursor = "pointer";
+      option2.addEventListener("click", function (event) {
+        var sortLineInput = document.getElementById("sortLineInput");
+        var sortLineSelect = document.getElementById("sortLineSelect");
+        var sortTraitSelect = document.getElementById('sortTraitSelect');
+        var germplasmStart = Math.floor(genotypeCanvas.translatedY / genotypeCanvas.boxSize);
+        var rect = genotypeCanvas.canvas.getBoundingClientRect();
+        var y = customContextMenu.offsetTop - rect.top - 56; // 56 stands for height above the first line of the canvas
+        var index = Math.floor(y / genotypeCanvas.boxSize + germplasmStart);
+        var reference = genotypeCanvas.dataSet.germplasmListFiltered[index];
+        if (reference !== undefined) {
+          var referenceName = reference.name;
+          canvasController.setLineSort(new SimilarityLineSort(referenceName, [canvasController.chromosomeIndex]));
+          canvasController.saveSetting("sortReference", referenceName);
+          var importingOrderSort = document.getElementById("importingOrderSort");
+          var alphabeticSort = document.getElementById("alphabeticSort");
+          var similaritySort = document.getElementById("similaritySort");
+          importingOrderSort.checked = false;
+          alphabeticSort.checked = false;
+          similaritySort.checked = true;
+          sortLineInput.value = referenceName;
+          canvasController.similaritySortChange(sortLineInput, sortTraitSelect, sortLineSelect, index, false);
+        }
+        hideContextMenu();
+      });
+      option2.addEventListener("mouseover", function () {
+        option2.style.backgroundColor = "grey";
+      });
+      option2.addEventListener("mouseout", function () {
+        option2.style.backgroundColor = "";
+      });
+      customContextMenu.addEventListener("mouseleave", function () {
+        customContextMenu.style.display = "none";
+      });
+      customContextMenu.appendChild(option1);
+      customContextMenu.appendChild(option2);
+      document.body.appendChild(customContextMenu);
+    }
+    function resizehandler(resizeHandle, resizableDiv1, resizableDiv2) {
+      var isResizing = false;
+      var initialY;
+      var originalHeight1;
+      var originalHeight2;
+      resizeHandle.addEventListener('mousedown', function (event) {
+        isResizing = true;
+        initialY = event.clientY;
+        originalHeight1 = resizableDiv1.canvas.clientHeight;
+        originalHeight2 = resizableDiv2.canvas.clientHeight;
+      });
+      document.addEventListener('mousemove', function (event) {
+        if (!isResizing) return;
+        var currentY = event.clientY;
+        var height1 = originalHeight1 - (currentY - initialY);
+        var height2 = originalHeight2 + (currentY - initialY);
+
+        // Appliquer la hauteur minimale souhaitée si nécessaire
+        var minHeight = 10;
+        if (height1 > minHeight) {
+          resizableDiv1.height = height1;
+          resizableDiv1.canvas.height = height1;
+          resizableDiv1.backBuffer.height = height1;
+        }
+        if (height2 > minHeight) {
+          resizableDiv2.height = height2;
+          resizableDiv2.canvas.height = height2;
+          resizableDiv2.backBuffer.height = height2;
+        }
+        resizableDiv2.horizontalScrollbar = new ScrollBar(resizableDiv2.alleleCanvasWidth(), height2, resizableDiv2.alleleCanvasWidth(), resizableDiv2.scrollbarHeight, false);
+        genotypeCanvas.prerender(true);
+        overviewCanvas.prerender(true);
+      });
+      document.addEventListener('mouseup', function () {
+        isResizing = false;
+      });
+    }
     function clearParent(domParent) {
       var canvasHolder = document.getElementById(domParent.replace('#', ''));
       while (canvasHolder.firstChild) {
@@ -7453,21 +6898,35 @@
         canvasHolder.append(progressBarBackground);
       }
       genotypeCanvas = new GenotypeCanvas(width, config.height, boxSize);
+      genotypeCanvas.canvas.id = 'genotypeCanvas';
       canvasHolder.append(genotypeCanvas.canvas);
+      var resizeHandle = document.createElement("div");
+      resizeHandle.id = "resizeHandle";
+      resizeHandle.style.width = '100%';
+      resizeHandle.style.height = '3px';
+      resizeHandle.style.backgroundColor = '#e74c3c';
+      resizeHandle.style.cursor = 'row-resize';
+      canvasHolder.append(resizeHandle);
       if (!overviewWidth) overviewWidth = width;
       if (!config.overviewHeight) config.overviewHeight = 200;
       overviewCanvas = new OverviewCanvas(overviewWidth, config.overviewHeight);
+      overviewCanvas.canvas.id = 'overviewCanvas';
       canvasHolder.append(overviewCanvas.canvas);
+      resizehandler(resizeHandle, overviewCanvas, genotypeCanvas);
       addStyleSheet();
       canvasController = new CanvasController(canvasHolder, genotypeCanvas, overviewCanvas, config.saveSettings != false, config.width === null, config.overviewWidth === null, config.minGenotypeAutoWidth, config.minOverviewAutoWidth);
+      createContextMenu(genotypeCanvas, canvasController);
     }
-    function createTabToggle(name, title) {
-      var button = document.createElement('button');
-      button.classList.add('bytes-tabtoggle');
-      button.style.fontSize = '15px';
-      button.appendChild(document.createTextNode(title));
-      button.addEventListener('click', openSettingsTab(name));
-      return button;
+    function createTabToggle(name, title, tab) {
+      if (tab !== undefined) {
+        var button = document.createElement('button');
+        button.classList.add('bytes-tabtoggle');
+        button.style.fontSize = '15px';
+        button.style.cursor = 'hand';
+        button.appendChild(document.createTextNode(title));
+        button.addEventListener('click', openSettingsTab(name));
+        return button;
+      }
     }
     function openSettingsTab(name) {
       return function (event) {
@@ -7480,7 +6939,7 @@
               _settingsTabs$get2 = _slicedToArray(_settingsTabs$get, 2),
               button = _settingsTabs$get2[0],
               tab = _settingsTabs$get2[1];
-            if (key == name) {
+            if (key == name && !button.classList.contains('bytes-tabtoggle-active')) {
               button.classList.add('bytes-tabtoggle-active');
               tab.style.display = 'block';
             } else {
@@ -7495,7 +6954,7 @@
         }
       };
     }
-    function addRadioButton(name, id, text, checked, parent, subcontrol) {
+    function addRadioButton(name, id, text, checked, parent, subcontrol, subcontrol2) {
       var formCheck = document.createElement('div');
       formCheck.classList.add('form-check');
       var radio = document.createElement('input');
@@ -7512,6 +6971,7 @@
       formCheck.appendChild(radio);
       formCheck.appendChild(radioLabel);
       if (subcontrol) formCheck.appendChild(subcontrol);
+      if (subcontrol2) formCheck.appendChild(subcontrol2);
       parent.appendChild(formCheck);
     }
     function addCSSRule(sheet, selector, rules, index) {
@@ -7537,8 +6997,8 @@
       //addCSSRule(sheet, '.bytes-fieldset > legend', 'border-style: none; border-width: 0; font-size: 14px; line-height: 20px; margin-bottom: 0; width: auto; padding: 0 10px; border: 1px solid #e0e0e0;');
       //addCSSRule(sheet, '.bytes-fieldset', 'border: 1px solid #e0e0e0; padding: 10px;');
       addCSSRule(sheet, '.bytes-tabtoggle', "display: inline-block; border: none; outline: none; padding: 8px;");
-      addCSSRule(sheet, '.bytes-tabtoggle:hover', 'background-color: #DDDDDD');
-      addCSSRule(sheet, '.bytes-tabtoggle.bytes-tabtoggle-active', 'background-color: #CCCCCC');
+      addCSSRule(sheet, '.bytes-tabtoggle:hover', 'background-color: #CCCCCC');
+      addCSSRule(sheet, '.bytes-tabtoggle.bytes-tabtoggle-active', 'background-color: #DDDDDD');
       addCSSRule(sheet, '.bytes-tab', 'display: none;');
       // addCSSRule(sheet, 'input', 'margin: .4rem;');
     }
@@ -7546,11 +7006,11 @@
     function createSettings(config) {
       //// Settings
       var settings = document.createElement('div');
+      settings.id = 'settings';
       settings.classList.add('row');
       settings.style.marginTop = '8px';
 
       // Create the tabs
-      var controlTab = createControlTab();
       var colorTab = createColorSchemeTab();
       var sortTab = createSortTab(config);
       var exportTab = createExportTab();
@@ -7558,41 +7018,20 @@
 
       // Create the tab toggles
       var menuRow = document.createElement('div');
-      var controlButton = createTabToggle('control', 'Controls');
-      var colorButton = createTabToggle('color', 'Color schemes');
-      var sortButton = createTabToggle('sort', 'Sorting');
-      var displayButton = createTabToggle('display', 'Display');
-      var exportButton = createTabToggle('export', 'Export');
-      menuRow.appendChild(controlButton);
+      menuRow.id = 'menurow';
+      var colorButton = createTabToggle('color', 'Color schemes', colorTab);
+      var sortButton = createTabToggle('sort', 'Sorting', sortTab);
+      var displayButton = createTabToggle('display', 'Display', displayTab);
+      var exportButton = createTabToggle('export', 'Export', exportTab);
       menuRow.appendChild(colorButton);
       menuRow.appendChild(sortButton);
       if (displayTab !== undefined) menuRow.appendChild(displayButton);
       menuRow.appendChild(exportButton);
-      settingsTabs.set('control', [controlButton, controlTab]);
       settingsTabs.set('color', [colorButton, colorTab]);
       settingsTabs.set('sort', [sortButton, sortTab]);
       if (displayTab !== undefined) settingsTabs.set('display', [displayButton, displayTab]);
       settingsTabs.set('export', [exportButton, exportTab]);
       settings.appendChild(menuRow);
-
-      // Add the actual tabs
-      var tabContainer = document.createElement('div');
-      tabContainer.appendChild(controlTab);
-      tabContainer.appendChild(colorTab);
-      tabContainer.appendChild(sortTab);
-      if (displayTab !== undefined) tabContainer.appendChild(displayTab);
-      tabContainer.appendChild(exportTab);
-      tabContainer.style.minHeight = '140px'; // Can't really use getClientBoundingRect as the tabs are not displayed yet, so...
-      tabContainer.style.border = '1px solid #e0e0e0';
-      tabContainer.style.padding = '10px';
-      settings.appendChild(tabContainer);
-      controlTab.style.display = 'block';
-      return settings;
-    }
-    function createControlTab(config) {
-      // Controls
-      var tab = document.createElement('div');
-      tab.classList.add('bytes-tab');
 
       // Chromosome
       var chromosomeLabel = document.createElement('label');
@@ -7642,34 +7081,122 @@
           zoom(range.value);
         }
       });
-      tab.appendChild(chromosomeContainer);
-      tab.appendChild(zoomContainer);
-      return tab;
+
+      // Ctrl+F
+      var findLine = document.createElement('input');
+      findLine.type = "text";
+      findLine.id = "lineInput";
+      findLine.style.width = "170px";
+      findLine.placeholder = "Search line";
+      var notFoundlabel = document.createElement('label');
+      notFoundlabel.style.display = 'none';
+      notFoundlabel.setAttribute('for', 'lineInput');
+      var findContainer = document.createElement('div');
+      findContainer.id = "findContainer";
+      findContainer.style.marginLeft = "50px";
+      findContainer.append(findLine);
+      findContainer.append(notFoundlabel);
+      var incfindline = 0;
+      findLine.addEventListener("input", function (event) {
+        notFoundlabel.style.display = 'none';
+        var found = dragToLine(findLine.value.toLowerCase(), incfindline);
+        if (found === false) {
+          notFoundlabel.style.position = 'absolute';
+          notFoundlabel.style.display = 'block';
+          notFoundlabel.style.marginLeft = '100px';
+          notFoundlabel.style.marginTop = '-19px';
+          notFoundlabel.innerHTML = ' not found';
+          notFoundlabel.style.color = 'red';
+          notFoundlabel.style.backgroundColor = '#eeeeee';
+          notFoundlabel.style.padding = '0px 3px';
+        }
+      });
+      findLine.addEventListener("keydown", function (event) {
+        // Code 13 stands for "Enter" key
+        if (event.keyCode === 13) {
+          if (findLine.value.length !== 0) {
+            incfindline = incfindline + 1;
+          }
+        } else {
+          incfindline = 0;
+        }
+        findLine.dispatchEvent(new Event('input'));
+      });
+      var markerrange = document.createElement("div");
+      markerrange.id = "markerRange";
+      chromosomeContainer.style.display = "inline-block";
+      chromosomeContainer.style.margin = "0 40px";
+      chromosomeContainer.style.paddingTop = "4px";
+      chromosomeContainer.style.minWidth = "285px";
+      zoomContainer.style["float"] = "right";
+      zoomContainer.style.marginLeft = "40px";
+      findContainer.style["float"] = "right";
+      findContainer.style.marginTop = "2px";
+      findContainer.style.marginLeft = "0px";
+      markerrange.style.marginTop = "-5px";
+      markerrange.style.marginLeft = "15px";
+      markerrange.style.textAlign = "right";
+      markerrange.style.display = "inline-block";
+      markerrange.style.color = "blue";
+      markerrange.style.position = "absolute";
+      markerrange.style.fontSize = "12px";
+
+      // Add the actual tabs
+      var tabContainer = document.createElement('div');
+      tabContainer.appendChild(colorTab);
+      tabContainer.appendChild(sortTab);
+      if (displayTab !== undefined) tabContainer.appendChild(displayTab);
+      tabContainer.appendChild(exportTab);
+      tabContainer.style.position = 'absolute';
+      tabContainer.style.backgroundColor = 'rgb(221,221,221)';
+      tabContainer.style.minWidth = '400px';
+      tabContainer.style.opacity = '95%';
+      settings.appendChild(tabContainer);
+      menuRow.appendChild(chromosomeContainer);
+      menuRow.appendChild(zoomContainer);
+      //menuRow.appendChild(filterContainer);
+      menuRow.appendChild(findContainer);
+      chromosomeContainer.appendChild(markerrange);
+      return settings;
     }
-    function createColorSchemeTab(config) {
+    function createColorSchemeTab() {
       var tab = document.createElement('div');
       tab.classList.add('bytes-tab');
-      var lineSelect = document.createElement('select');
+      tab.style.margin = '10px';
+      var lineSelect = document.createElement('datalist');
       lineSelect.id = 'colorLineSelect';
-      lineSelect.disabled = true;
+      var lineInput = document.createElement('input');
+      lineInput.type = 'text';
+      lineInput.id = 'colorLineInput';
+      lineInput.placeholder = 'Select line';
+      lineInput.disabled = true;
+      lineInput.setAttribute("list", "colorLineSelect");
+      lineInput.style.width = '150px';
       var radioCol = document.createElement('div');
       radioCol.classList.add('col');
       addRadioButton('selectedScheme', 'nucleotideScheme', 'Nucleotide', true, radioCol);
-      addRadioButton('selectedScheme', 'similarityScheme', 'Similarity to line (allele match)', false, radioCol, lineSelect);
+      addRadioButton('selectedScheme', 'similarityScheme', 'Similarity to line (allele match)', false, radioCol, lineSelect, lineInput);
       tab.appendChild(radioCol);
       return tab;
     }
     function createSortTab(config) {
       var tab = document.createElement('div');
       tab.classList.add('bytes-tab');
-      var lineSelect = document.createElement('select');
+      tab.style.margin = '10px';
+      var lineSelect = document.createElement('datalist');
       lineSelect.id = 'sortLineSelect';
-      lineSelect.disabled = true;
+      var lineInput = document.createElement('input');
+      lineInput.type = 'text';
+      lineInput.id = 'sortLineInput';
+      lineInput.placeholder = 'Select line';
+      lineInput.disabled = true;
+      lineInput.setAttribute("list", "sortLineSelect");
+      lineInput.style.width = '150px';
       var radioCol = document.createElement('div');
       radioCol.classList.add('col');
       addRadioButton('selectedSort', 'importingOrderSort', 'By importing order', true, radioCol);
       addRadioButton('selectedSort', 'alphabeticSort', 'Alphabetically', false, radioCol);
-      addRadioButton('selectedSort', 'similaritySort', 'By similarity to line', false, radioCol, lineSelect);
+      addRadioButton('selectedSort', 'similaritySort', 'By similarity to line', false, radioCol, lineSelect, lineInput);
       if (config.phenotypeFileDom !== undefined && document.getElementById(config.phenotypeFileDom.replace('#', '')).files[0] !== undefined || config.phenotypeFileURL !== undefined) {
         var traitSelect = document.createElement('select');
         traitSelect.id = 'sortTraitSelect';
@@ -7679,11 +7206,13 @@
       tab.appendChild(radioCol);
       return tab;
     }
-    function createExportTab(config) {
+    function createExportTab() {
       var tab = document.createElement('div');
       tab.classList.add('bytes-tab');
+      tab.style.margin = '10px';
       var exportViewButton = document.createElement('button');
       var exportViewText = document.createTextNode('Export view');
+      exportViewButton.style.marginRight = '10px';
       exportViewButton.appendChild(exportViewText);
       exportViewButton.addEventListener('click', function (e) {
         var dataURL = genotypeCanvas.toDataURL('image/png');
@@ -7722,6 +7251,7 @@
       if (config.phenotypeFileDom !== undefined && document.getElementById(config.phenotypeFileDom.replace('#', '')).files[0] !== undefined || config.phenotypeFileURL !== undefined) {
         var tab = document.createElement('div');
         tab.classList.add('bytes-tab');
+        tab.style.marginLeft = '10px';
         var traitSelectContainer = document.createElement('div');
         traitSelectContainer.style["float"] = 'left';
         var traitSelectLegend = document.createElement('p');
@@ -7730,12 +7260,13 @@
         var traitSelect = document.createElement('select');
         traitSelect.id = 'displayTraitSelect';
         traitSelect.multiple = true;
-        traitSelect.size = 5;
+        traitSelect.size = 10;
         traitSelectContainer.appendChild(traitSelectLegend);
         traitSelectContainer.appendChild(traitSelect);
         var paletteSelectContainer = document.createElement('div');
         paletteSelectContainer.style["float"] = 'left';
-        paletteSelectContainer.style.marginLeft = '10px';
+        paletteSelectContainer.style.marginLeft = '30px';
+        paletteSelectContainer.style.marginBottom = '10px';
         var paletteSelectLegend = document.createElement('p');
         var paletteSelectLegendText = document.createTextNode('Trait colors');
         paletteSelectLegend.appendChild(paletteSelectLegendText);
@@ -7745,21 +7276,34 @@
         var paletteSelectValue = document.createElement('select');
         paletteSelectValue.id = 'paletteValue';
         paletteSelectValue.style.display = 'block';
+        paletteSelectValue.multiple = true;
+        paletteSelectValue.size = 9;
         var paletteSelectColor = document.createElement('input');
         paletteSelectColor.id = 'paletteColor';
         paletteSelectColor.style.display = 'block';
+        paletteSelectColor.style.marginLeft = '20px';
+        paletteSelectColor.style.marginBottom = '10px';
         paletteSelectColor.setAttribute('type', 'color');
         var paletteResetButton = document.createElement('button');
-        var paletteResetLegend = document.createTextNode("Reset this trait's colors");
+        var paletteResetLegend = document.createTextNode("Reset trait colors");
         paletteResetButton.appendChild(paletteResetLegend);
         paletteResetButton.id = 'paletteReset';
+        paletteResetButton.style.marginLeft = '20px';
+        var colorContainer = document.createElement('div');
+        colorContainer.style["float"] = 'right';
         paletteSelectContainer.appendChild(paletteSelectLegend);
         paletteSelectContainer.appendChild(paletteSelectTrait);
+        paletteSelectContainer.appendChild(colorContainer);
         paletteSelectContainer.appendChild(paletteSelectValue);
-        paletteSelectContainer.appendChild(paletteSelectColor);
-        paletteSelectContainer.appendChild(paletteResetButton);
+        var buttonContainer = document.createElement("div");
+        buttonContainer.style["float"] = 'left';
+        buttonContainer.style.marginBottom = '10px';
+        buttonContainer.style.paddingTop = '65px';
+        buttonContainer.appendChild(paletteSelectColor);
+        buttonContainer.appendChild(paletteResetButton);
         tab.appendChild(traitSelectContainer);
         tab.appendChild(paletteSelectContainer);
+        tab.appendChild(buttonContainer);
         return tab;
       }
     }
@@ -7852,7 +7396,7 @@
       clearParent(config.domParent);
       createRendererComponents(config, false);
       var germplasmData;
-      var client = axios.create({
+      var client = axios$1.create({
         baseURL: config.baseURL
       });
       client.defaults.headers.common.Authorization = "Bearer ".concat(config.authToken);
@@ -7898,7 +7442,7 @@
           germplasmData = genotypeImporter.parseVariantSetCalls(variantSetCalls);
           var _genotypeImporter2 = genotypeImporter,
             stateTable = _genotypeImporter2.stateTable;
-          var dataSetId = config.dataSetId === undefined ? config.matrixId : config.dataSetId;
+          config.dataSetId === undefined ? config.matrixId : config.dataSetId;
           dataSet = new DataSet(config.matrixId, genomeMap, germplasmData, stateTable);
           populateLineSelect();
           populateChromosomeSelect();
@@ -7949,7 +7493,7 @@
       setProgressBarLabel("Downloading data...");
       setAdvancement(0);
       if (config.mapFileURL) {
-        var mapPromise = axios.get(config.mapFileURL, {
+        var mapPromise = axios$1.get(config.mapFileURL, {
           headers: {
             'Content-Type': 'text/plain'
           },
@@ -7968,7 +7512,7 @@
         loadingPromises.push(mapPromise);
       }
       if (config.phenotypeFileURL) {
-        var phenotypePromise = axios.get(config.phenotypeFileURL, {
+        var phenotypePromise = axios$1.get(config.phenotypeFileURL, {
           headers: {
             'Content-Type': 'text/plain'
           },
@@ -7986,7 +7530,7 @@
         });
         loadingPromises.push(phenotypePromise);
       }
-      var genotypePromise = axios.get(config.genotypeFileURL, {
+      var genotypePromise = axios$1.get(config.genotypeFileURL, {
         headers: {
           'Content-Type': 'text/plain'
         },
@@ -8075,8 +7619,8 @@
         var opt = document.createElement('option');
         opt.value = germplasm.name;
         opt.text = germplasm.name;
-        colorLineSelect.add(opt);
-        sortLineSelect.add(opt.cloneNode(true));
+        colorLineSelect.appendChild(opt);
+        sortLineSelect.appendChild(opt.cloneNode(true));
       });
     }
     function populateTraitSelect() {
@@ -8206,4 +7750,4 @@
 
   return GenotypeRenderer;
 
-})));
+}));
