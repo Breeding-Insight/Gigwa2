@@ -23,6 +23,7 @@
 		<mongodb.windows.file>win32-x86_64-2012plus-4.2.24</mongodb.windows.file>
 		<mongodb.osx.file>macos-x86_64-4.2.24</mongodb.osx.file>
 		<mongodb.osx.folder>macos-x86_64-4.2.24</mongodb.osx.folder>	<!-- for some reason the OSX folder name differs from the archive name -->
+		<testcontainers.version>1.16.3</testcontainers.version>
 	</properties>
 
 	<groupId>fr.cirad</groupId>
@@ -229,6 +230,18 @@
 			      <groupId>com.google.code.findbugs</groupId>
 			      <artifactId>jsr305</artifactId>
 			    </exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
+			<version>${testcontainers.version}</version>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>junit</groupId>
+					<artifactId>junit</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 	</dependencies>

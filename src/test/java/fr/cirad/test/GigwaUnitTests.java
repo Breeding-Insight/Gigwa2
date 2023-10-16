@@ -5,12 +5,17 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Properties;
 
 import org.apache.avro.AvroRemoteException;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.images.PullPolicy;
 import org.ga4gh.methods.GAException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -26,9 +31,28 @@ import fr.cirad.tools.mgdb.GenotypingDataQueryBuilder;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 
 public class GigwaUnitTests {
+
+	private static Network network;
+	private static GenericContainer mongo;
 	
 	@BeforeClass
 	public static void setUpBeforeClass() throws MalformedURLException, Exception {
+		network = Network.newNetwork();
+		mongo = new GenericContainer("mongo:4.2.24")
+				.withNetwork(network)
+				.withNetworkAliases("gigwa_db")
+				.withImagePullPolicy(PullPolicy.defaultPolicy())
+				.withExposedPorts(27017)
+				.withEnv("MONGO_INITDB_ROOT_USERNAME", "mongo")
+				.withEnv("MONGO_INITDB_ROOT_PASSWORD", "mongo")
+				.withCommand("--profile 0 --slowms 60000 --storageEngine wiredTiger --wiredTigerCollectionBlockCompressor=zstd --directoryperdb --quiet");
+		mongo.start();
+
+		System.setProperty("MONGO_IP", mongo.getContainerIpAddress());
+		System.setProperty("MONGO_PORT", String.valueOf(mongo.getMappedPort(27017)));
+		System.setProperty("MONGO_INITDB_ROOT_USERNAME", "mongo");
+		System.setProperty("MONGO_INITDB_ROOT_PASSWORD", "mongo");
+
 		Reader datasources = new FileReader("src/main/resources/datasources.properties");
 		Properties p = new Properties();
 		p.load(datasources);
