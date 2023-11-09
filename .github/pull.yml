@@ -4,5 +4,8 @@ rules:
     upstream: SouthGreenPlatform:master
     mergeMethod: merge
     assignees:
-      - timparsons
+      - nickpalladino
+      - mlm483
+      - dmeidlin
+      - davedrp
 label: "upstream-merge"
