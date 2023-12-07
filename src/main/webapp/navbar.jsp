@@ -35,7 +35,7 @@
 		   				<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-list-alt margin-icon" aria-hidden="true"></span>Manage data</a>
 		   				<ul class="dropdown-menu">
 						<li><a href="<c:url value='<%= GigwaRestController.IMPORT_PAGE_URL%>' />" id="import" onclick="window.location.href = this.href" data-toggle="tooltip" data-placement="bottom">Import data</a></li>
-		                    <c:if test="${userDao.canLoggedUserWriteToSystem() || userDao.doesLoggedUserOwnEntities()}">
+		                    <c:if test="${userDao.canLoggedUserWriteToSystem()}">
 								<li><a href="<c:url value='/permissionManagement.jsp' />" data-toggle="tooltip" data-placement="bottom">Administer existing data<br/>and user permissions</a></li>
 							</c:if>
 							<c:if test="${principal != null && !isAnonymous}">
@@ -62,6 +62,10 @@
                         <label for="project" class="label-light" id="projectLabel">Project </label>
                         <select class="selectpicker" id="project" data-actions-box="true" data-live-search="true" name="project"></select>
 	                    <a href="#" onclick="displayProjectInfo($('#project').val());" id="projectInfoLink" style="display:none;"><span role='button' title="Click for project information" class="glyphicon glyphicon-info-sign" id="formatHelp" style="color:yellow;"></span></a>
+                    </div>
+                    <div class="form-group" id="grpAsm" style="display:none;">
+	                    &nbsp;<label for="assembly" class="label-light">Assembly </label>
+                        <select class="selectpicker" id="assembly" data-actions-box="true" name="assembly"></select>
                     </div>
                 </form>
             </div>
