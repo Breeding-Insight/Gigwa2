@@ -36,7 +36,179 @@ $(document).ready(function () {
 	getToken();
     loadModules();
     loadHost();
+	$('#projectExisting').html('<option>- new project -</option>').selectpicker('refresh');
     $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
+
+    $(".mandatoryGtField").change(function() {
+		var isFormValid = isGenotypingDataFormValid(false);
+		$('span#gtFormValid').hide();
+		$('span#gtFormInvalid').hide();
+		if (isFormValid == null)
+			return;	// null means untouched
+
+		if (isFormValid)
+			$('span#gtFormValid').show();
+		else
+			$('span#gtFormInvalid').show();			
+		$('#moduleExistingMD').change();	// in case a metadata file was specified before this form became valid
+    });
+	
+    $('#moduleExistingG').on('change', function () {
+        clearFields();
+        if ($(this).val() !== '- new database -' && $(this).val() !== null) {
+            loadProjects($(this).val());
+            $('#newModuleDiv').hide();
+            $('#taxonDiv').hide();
+            $('#hostGrp').hide();
+        } else {
+			$("input#moduleToImport").val("");
+            $('#projectExisting').html('<option>- new project -</option>').selectpicker('refresh');
+            $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
+            $('#newModuleDiv').show();
+            $('#taxonDiv').show();
+            $('#projectToImport').removeClass('hidden');
+            $('#runToImport').removeClass('hidden');
+            $('#hostGrp').show();
+        }
+        $("input#moduleToImport").change();
+    });
+
+    $(".mandatoryMdField").change(function() {
+		$("span.mdType").text($("#metadataType").val());
+	
+		if (isAnonymous)
+			$("#metadataScopeDesc").html("As an anonymous user, any metadata you import into a database is only visible to yourself and lasts as long as your web session.");
+	 	else if (isAdmin || arrayContains(supervisedModules, $('#moduleExistingMD').val()))
+			$("#metadataScopeDesc").html("As an administrator or supervisor, any metadata you import into a database is considered global and therefore visible to anyone allowed to work with it.");
+	 	else
+	 		$("#metadataScopeDesc").html("As an authenticated simple user, any metadata you import into a database is only visible to yourself and is persisted in your account.");
+	
+		if ($('#mdTab').hasClass("active")) {
+		    $("form#importDropzoneMD .dz-file-preview").each(function() {
+		        $(this).removeClass('dz-processing');
+		        $(this).removeClass('dz-success');
+		        $(this).removeClass('dz-complete');
+		        $(this).removeClass('dz-error');
+		    });
+		
+		    $.each(importDropzoneMD.files, function(i, file) { // re-add files to the queue
+		        file.status = Dropzone.QUEUED;
+		    });
+
+		    importDropzoneMD.options.url = metadataValidationURL;
+		    currentMetadataValidationStartTime = Date.now();
+			$('span#mdFormValid').hide();
+			$('span#mdFormInvalid').hide();
+		    if (importDropzoneMD.getQueuedFiles().length > 0)
+		    	importDropzoneMD.processQueue();
+		    else {
+		        var blob = new Blob();
+		        blob.upload = { name:"nofiles" };
+		        importDropzoneMD.uploadFile(blob);
+		    }
+		}
+		else
+			checkMetaDataForm(false);
+    });
+    
+    $('input#moduleToImport').on('change', function () {
+        $('#projectExisting').change();
+	});
+    
+    $('#projectExisting').on('change', function () {
+    	$('#emptyBeforeImportDiv').toggle();
+    	var projDesc = projectDescriptions[$(this).val()];
+    	$("textarea#projectDesc").val(projDesc == null ? "" : projDesc);
+        if ($(this).val() !== '- new project -') {
+            loadRuns();
+            $('#projectToImport').addClass('hidden');
+            $('#emptyBeforeImportDiv').show(100);
+            $('#projectDescDiv').show(100);
+        } else {
+            $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
+            $('#projectToImport').val("");
+            $('#projectToImport').removeClass('hidden');
+            $('#emptyBeforeImportDiv').hide(100);
+            if ($('#projectToImport').val() != '')
+            	$('#projectDescDiv').show(100);
+            else
+            	$('#projectDescDiv').hide(100);
+        }
+    	$('#runExisting').change();
+    });
+
+    $('#runExisting').on('change', function () {
+        if ($(this).val() !== '- new run -') {
+            $('#runToImport').hide();
+        	$('#overwriteRunWarning').show();
+        } else {
+            $('#runToImport').show();
+            $('#runToImport').val("");
+        	$('#overwriteRunWarning').hide();
+        }
+        $('#runToImport').change();
+    });
+
+    // check if entered char is valid 
+    $(".text-input").on("keypress", function (event) {
+        if (!isValidKeyForNewName(event))
+        {
+        	event.preventDefault();
+        	event.stopPropagation();
+        }
+    });
+    $(".text-input").on("change", function (event) {
+        if (!isValidNewName($(this).val()))
+        	$(this).val("");
+    });
+
+    $('#progress').on('hidden.bs.modal', function () {
+    	if (!processAborted && !$('#progress').data('error')) {
+            $('.importFormDiv input').prop('disabled', true);
+            $('.importFormDiv button').prop('disabled', true);
+            $('.importFormDiv textarea').prop('disabled', true);
+            var gtFormOK = $('span#gtFormValid').is(":visible")/*, mdFormOK = $('span#mdFormValid').is(":visible")*/;
+            $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>This data is now <a style="cursor:pointer;" href="' + webappUrl + "?module=" + (gtFormOK ? $("#moduleToImport").val() : $("#moduleExistingMD").val()) + (gtFormOK ? "&project=" + $("#projectToImport").val() : "") + '">available here</a></p>');
+            if (importFinalMessage != null)
+            	$('#progressContents').append('<p class="bold panel" style="padding:10px;">' + importFinalMessage + '</p>');
+           	$('#progressContents').append('<p class="bold panel" style="padding:10px;">Add or amend individual / sample metadata <a style="cursor:pointer;" href="' + importPageUrl + "?module=" + (gtFormOK ? $("#moduleToImport").val() : $("#moduleExistingMD").val()) + '&type=metadata">via this link</a></p>');
+            $('#progress').modal('show');
+        }
+        else {
+	    	if (processAborted)
+	    		alert("Import aborted as requested");
+
+			var gtImportAttempted = $('span#gtFormValid').is(":visible");
+		  	if (gtImportAttempted) {
+				importDropzoneG.options.maxFiles -= importDropzoneMD.getAcceptedFiles().length;
+				for (var i=0; i<importDropzoneMD.getAcceptedFiles().length; i++) {
+					var file = importDropzoneMD.getAcceptedFiles()[i];
+					//console.log("removing " + file.name + " (" + importDropzoneG.options.maxFiles + ")");
+		    		importDropzoneG.removeFile(file);
+				}
+           	}
+			// re-add files to the queue
+            $.each((gtImportAttempted ? importDropzoneG : importDropzoneMD).getAcceptedFiles(), function(i, file) {
+                file.status = Dropzone.QUEUED;
+            });
+        }
+    });
+
+    $('#brapiPwdDialog').on('hidden.bs.modal', function () {
+    	brapiUserPassword = $('#brapiPassword').val();
+    	if (brapiUserPassword.length == 0)
+    		$('div#brapiDataSelectionDiv').remove();
+    	else
+    	{
+			BRAPI_V1_URL_ENDPOINT = $("input[name=dataFile1]").val().trim().replace(/:\/\/.*@/, ":\/\/");
+			if (!checkEndPoint())
+				return failAndHideBrapiDataSelectionDiv();
+			submitBrapiForm();
+    	}
+    });    
+    $('#brapiPwdDialog').on('shown.bs.modal', function () {
+    	$('#brapiPassword').focus();
+    });
     
     $.ajax({
         url: maxUploadSizeURL + "?capped=true",
@@ -197,177 +369,6 @@ function updateBrapiMetadataNotice() {
 
 }
 
-$(function () {
-    $(".mandatoryGtField").change(function() {
-		var isFormValid = isGenotypingDataFormValid(false);
-		$('span#gtFormValid').hide();
-		$('span#gtFormInvalid').hide();
-		if (isFormValid == null)
-			return;	// null means untouched
-
-		if (isFormValid)
-			$('span#gtFormValid').show();
-		else
-			$('span#gtFormInvalid').show();			
-		$('#moduleExistingMD').change();	// in case a metadata file was specified before this form became valid
-    });
-	
-    $('#moduleExistingG').on('change', function () {
-        clearFields();
-        if ($(this).val() !== '- new database -' && $(this).val() !== null) {
-            loadProjects($(this).val());
-            $('#newModuleDiv').hide();
-            $('#taxonDiv').hide();
-            $('#hostGrp').hide();
-        } else {
-			$("input#moduleToImport").val("");
-            $('#projectExisting').html('<option>- new project -</option>').selectpicker('refresh');
-            $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
-            $('#newModuleDiv').show();
-            $('#taxonDiv').show();
-            $('#projectToImport').removeClass('hidden');
-            $('#runToImport').removeClass('hidden');
-            $('#hostGrp').show();
-        }
-        $("input#moduleToImport").change();
-    });
-    
-    $('input#moduleToImport').on('change', function () {
-        $('#projectExisting').change();
-	});
-    
-    $('#projectExisting').on('change', function () {
-    	$('#emptyBeforeImportDiv').toggle();
-    	var projDesc = projectDescriptions[$(this).val()];
-    	$("textarea#projectDesc").val(projDesc == null ? "" : projDesc);
-        if ($(this).val() !== '- new project -') {
-            loadRuns();
-            $('#projectToImport').addClass('hidden');
-            $('#emptyBeforeImportDiv').show(100);
-            $('#projectDescDiv').show(100);
-        } else {
-            $('#runExisting').html('<option>- new run -</option>').selectpicker('refresh');
-            $('#projectToImport').removeClass('hidden');
-            $('#emptyBeforeImportDiv').hide(100);
-            if ($('#projectToImport').val() != '')
-            	$('#projectDescDiv').show(100);
-            else
-            	$('#projectDescDiv').hide(100);
-        }
-    	$('#runExisting').change();
-    });
-
-    $('#runExisting').on('change', function () {
-        if ($(this).val() !== '- new run -') {
-            $('#runToImport').hide();
-        	$('#overwriteRunWarning').show();
-        } else {
-            $('#runToImport').show();
-        	$('#overwriteRunWarning').hide();
-        }
-        $('#runToImport').change();
-    });
-
-    // check if entered char is valid 
-    $(".text-input").on("keypress", function (event) {
-        if (!isValidKeyForNewName(event))
-        {
-        	event.preventDefault();
-        	event.stopPropagation();
-        }
-    });
-    $(".text-input").on("change", function (event) {
-        if (!isValidNewName($(this).val()))
-        	$(this).val("");
-    });
-
-    $('#progress').on('hidden.bs.modal', function () {
-    	if (!processAborted && !$('#progress').data('error')) {
-            $('.importFormDiv input').prop('disabled', true);
-            $('.importFormDiv button').prop('disabled', true);
-            $('.importFormDiv textarea').prop('disabled', true);
-            var gtFormOK = $('span#gtFormValid').is(":visible")/*, mdFormOK = $('span#mdFormValid').is(":visible")*/;
-            $('#progressContents').html('<p class="bold panel" style="padding:10px;">Import complete.<br/>This data is now <a style="cursor:pointer;" href="' + webappUrl + "?module=" + (gtFormOK ? $("#moduleToImport").val() : $("#moduleExistingMD").val()) + (gtFormOK ? "&project=" + $("#projectToImport").val() : "") + '">available here</a></p>');
-            if (importFinalMessage != null)
-            	$('#progressContents').append('<p class="bold panel" style="padding:10px;">' + importFinalMessage + '</p>');
-           	$('#progressContents').append('<p class="bold panel" style="padding:10px;">Add or amend individual / sample metadata <a style="cursor:pointer;" href="' + importPageUrl + "?module=" + (gtFormOK ? $("#moduleToImport").val() : $("#moduleExistingMD").val()) + '&type=metadata">via this link</a></p>');
-            $('#progress').modal('show');
-        }
-        else {
-	    	if (processAborted)
-	    		alert("Import aborted as requested");
-
-			var gtImportAttempted = $('span#gtFormValid').is(":visible");
-		  	if (gtImportAttempted) {
-				importDropzoneG.options.maxFiles -= importDropzoneMD.getAcceptedFiles().length;
-				for (var i=0; i<importDropzoneMD.getAcceptedFiles().length; i++) {
-					var file = importDropzoneMD.getAcceptedFiles()[i];
-					//console.log("removing " + file.name + " (" + importDropzoneG.options.maxFiles + ")");
-		    		importDropzoneG.removeFile(file);
-				}
-           	}
-			// re-add files to the queue
-            $.each((gtImportAttempted ? importDropzoneG : importDropzoneMD).getAcceptedFiles(), function(i, file) {
-                file.status = Dropzone.QUEUED;
-            });
-        }
-    });
-
-    $('#brapiPwdDialog').on('hidden.bs.modal', function () {
-    	brapiUserPassword = $('#brapiPassword').val();
-    	if (brapiUserPassword.length == 0)
-    		$('div#brapiDataSelectionDiv').remove();
-    	else
-    	{
-			BRAPI_V1_URL_ENDPOINT = $("input[name=dataFile1]").val().trim().replace(/:\/\/.*@/, ":\/\/");
-			if (!checkEndPoint())
-				return failAndHideBrapiDataSelectionDiv();
-			submitBrapiForm();
-    	}
-    });    
-    $('#brapiPwdDialog').on('shown.bs.modal', function () {
-    	$('#brapiPassword').focus();
-    });
-    
-    $(".mandatoryMdField").change(function() {
-		$("span.mdType").text($("#metadataType").val());
-	
-		if (isAnonymous)
-			$("#metadataScopeDesc").html("As an anonymous user, any metadata you import into a database is only visible to yourself and lasts as long as your web session.");
-	 	else if (isAdmin || arrayContains(supervisedModules, $('#moduleExistingMD').val()))
-			$("#metadataScopeDesc").html("As an administrator or supervisor, any metadata you import into a database is considered global and therefore visible to anyone allowed to work with it.");
-	 	else
-	 		$("#metadataScopeDesc").html("As an authenticated simple user, any metadata you import into a database is only visible to yourself and is persisted in your account.");
-	
-		if ($('#mdTab').hasClass("active")) {
-		    $("form#importDropzoneMD .dz-file-preview").each(function() {
-		        $(this).removeClass('dz-processing');
-		        $(this).removeClass('dz-success');
-		        $(this).removeClass('dz-complete');
-		        $(this).removeClass('dz-error');
-		    });
-		
-		    $.each(importDropzoneMD.files, function(i, file) { // re-add files to the queue
-		        file.status = Dropzone.QUEUED;
-		    });
-
-		    importDropzoneMD.options.url = metadataValidationURL;
-		    currentMetadataValidationStartTime = Date.now();
-			$('span#mdFormValid').hide();
-			$('span#mdFormInvalid').hide();
-		    if (importDropzoneMD.getQueuedFiles().length > 0)
-		    	importDropzoneMD.processQueue();
-		    else {
-		        var blob = new Blob();
-		        blob.upload = { name:"nofiles" };
-		        importDropzoneMD.uploadFile(blob);
-		    }
-		}
-		else
-			checkMetaDataForm(false);
-    });
-});
-
 function importDataIfValid() {
 	if (currentMetadataValidationStartTime != null) {
 		if (Date.now() - currentMetadataValidationStartTime > 2000)
@@ -404,16 +405,9 @@ function submitBrapiForm() {
 	{
 		var dataFile1Input = $("input[name=dataFile1]");
 
-		if (brapiUserName == "")
-			brapiToken == null;
-		else
-		{
-		 	$("#importButton").attr('disabled', 'disabled');
-			$("<div id='brapiDataSelectionDiv'><img src='images/progress.gif' /> BrAPI authentication...</div>").insertBefore(dataFile1Input);
-			brapiToken = authenticateUser();
-			if (brapiToken == null)
-				return failAndHideBrapiDataSelectionDiv();
-	 	}
+        brapiGenotypesToken = prompt("Please enter token for genotyping data source\n" + BRAPI_V1_URL_ENDPOINT + "\n(leave blank if unneeded, cancel to abort import)");
+        if (brapiGenotypesToken == null)
+        	return failAndHideBrapiDataSelectionDiv();
 
 	 	$("#importButton").attr('disabled', 'disabled');
 		$("<div id='brapiDataSelectionDiv'><img src='images/progress.gif' /> Querying BrAPI service...</div>").insertBefore(dataFile1Input);
@@ -555,36 +549,22 @@ function importGenotypes(importMetadataToo) {
 			alert("BrAPI base-url should end with /brapi/v1");
 			return;
 		}
-		
+
 		BRAPI_V1_URL_ENDPOINT = dataFile1Input.val().trim().replace(/:\/\/.*@/, ":\/\/");
 		if (!checkEndPoint())
 			return failAndHideBrapiDataSelectionDiv();
-		var brapiUserNameMatches = source1Uri.match(/https?:\/\/(.*)@.*/);
-		brapiUserName = brapiUserNameMatches == null ? "" : brapiUserNameMatches[brapiUserNameMatches.length - 1];
-		if (brapiToken == null && brapiUserName.length > 0) {
-			if (!supportsAuthentication)
-			{
-				alert("This BrAPI service does not support authentication!");
-				return failAndHideBrapiDataSelectionDiv();
-			}
-			
-			$('#brapiPwdDialog').modal({backdrop: 'static', keyboard: false, show: true});
-			return;
-		}
-		else
-		{
-			submitBrapiForm();
-			if (typeof brapiParameters == 'undefined' || brapiParameters == null)
-				return;		// just displayed the selection div
-		}
+
+		submitBrapiForm();
+		if (typeof brapiParameters == 'undefined' || brapiParameters == null)
+			return;		// just displayed the selection div
 	}
 
 	if (typeof brapiParameters != 'undefined' && brapiParameters != null)
 	{
 		$('#brapiParameter_mapDbId').val(brapiParameters['mapDbId']);
 		$('#brapiParameter_studyDbId').val(brapiParameters['studyDbId']);
-		if (brapiToken != null)
-			$('#brapiParameter_token').val(brapiToken);
+		if (brapiGenotypesToken != null)
+			$('#brapiParameter_token').val(brapiGenotypesToken);
 	}
 
     $('#progress').modal({backdrop: 'static', keyboard: false, show: true});
@@ -622,13 +602,21 @@ function importGenotypes(importMetadataToo) {
 	    if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.length > 0) {
 	        $('#mixedImport_brapiURLs').val("");
 	        $('#mixedImport_brapiTokens').val("");
-	        distinctBrapiMetadataURLs.forEach(function(brapiUrl) {
-	            var brapiToken = prompt("Please enter token for\n" + brapiUrl + "\n(leave blank if unneeded, cancel to skip BrAPI source)");
-	            if (brapiToken == null)
-	            	return false;
+	        distinctBrapiMetadataURLs.forEach(function(brapiMetadataUrl) {
+				if (!brapiMetadataUrl.endsWith("/"))
+					brapiMetadataUrl += "/";
+
+				var brapiMetadataToken = null;
+				if (brapiMetadataUrl == BRAPI_V1_URL_ENDPOINT && brapiGenotypesToken != null)
+					brapiMetadataToken = brapiGenotypesToken;	// we already have a token for this endpoint
+				else {
+		            brapiMetadataToken = prompt("Please enter token for metadata source\n" + brapiMetadataUrl + "\n(leave blank if unneeded, cancel to skip BrAPI metadata source)");
+		            if (brapiMetadataToken == null)
+		            	return false;
+		        }
 	            var fFirstEntry = $('#mixedImport_brapiURLs').val() == "";
-	            $('#mixedImport_brapiURLs').val($('#mixedImport_brapiURLs').val() + (fFirstEntry ? "" : " ; ") + brapiUrl);
-	            $('#mixedImport_brapiTokens').val($('#mixedImport_brapiTokens').val() + (fFirstEntry ? "" : " ; ") + brapiToken);
+	            $('#mixedImport_brapiURLs').val($('#mixedImport_brapiURLs').val() + (fFirstEntry ? "" : " ; ") + brapiMetadataUrl);
+	            $('#mixedImport_brapiTokens').val($('#mixedImport_brapiTokens').val() + (fFirstEntry ? "" : " ; ") + brapiMetadataToken);
 	        });
 	    }
 	}
@@ -687,13 +675,16 @@ function importMetadata() {
     if (distinctBrapiMetadataURLs != null && distinctBrapiMetadataURLs.length > 0) {
         $('#brapiURLs').val("");
         $('#brapiTokens').val("");
-        distinctBrapiMetadataURLs.forEach(function(brapiUrl) {
-            var brapiToken = prompt("Please enter token for\n" + brapiUrl + "\n(leave blank if unneeded, cancel to skip BrAPI source)");
-            if (brapiToken == null)
+        distinctBrapiMetadataURLs.forEach(function(brapiMetadataUrl) {
+			if (!brapiMetadataUrl.endsWith("/"))
+				brapiMetadataUrl += "/";
+					
+            var brapiMetadataToken = prompt("Please enter token for metadata source\n" + brapiMetadataUrl + "\n(leave blank if unneeded, cancel to skip BrAPI metadata source)");
+            if (brapiMetadataToken == null)
             	return false;
             var fFirstEntry = $('#brapiURLs').val() == "";
-            $('#brapiURLs').val($('#brapiURLs').val() + (fFirstEntry ? "" : " ; ") + brapiUrl);
-            $('#brapiTokens').val($('#brapiTokens').val() + (fFirstEntry ? "" : " ; ") + brapiToken);
+            $('#brapiURLs').val($('#brapiURLs').val() + (fFirstEntry ? "" : " ; ") + brapiMetadataUrl);
+            $('#brapiTokens').val($('#brapiTokens').val() + (fFirstEntry ? "" : " ; ") + brapiMetadataToken);
         });
     }
 	
@@ -775,6 +766,8 @@ function loadModules() {
             $('#moduleExistingG').append(options).selectpicker('refresh');
     		var passedModule = $_GET("module");
     		if (passedModule != null) {
+				while (passedModule.endsWith('#'))
+					passedModule = passedModule.substring(0, passedModule.length - 1);
                 $('#moduleExistingG').val(passedModule).selectpicker('refresh');
                 $('#moduleExistingG').change();
 			}
