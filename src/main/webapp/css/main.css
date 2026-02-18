@@ -55,7 +55,7 @@
  	color: red;
  }
  
- .metadataToPull-no {
+ .metadataToPull-no, .orange {
  	color: #ee8800;
  }
  .metadataToPull-yes {
@@ -150,13 +150,32 @@ div#welcome {
     margin: 0 auto;
 }
 
-div#density, div#individualFiltering, div#manual, div#variantDetailPanel, div#fjBytesPanel, div#genomeBrowserPanel div#igvPanel {
+#individualFilteringTable th.draggable {
+    cursor: move;
+}
+
+#individualFilteringTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#individualFilteringTable th, #individualFilteringTable td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.dragging-helper, #individualFilteringTable th.highlight {
+    background-color: #ddd;
+}
+
+div#chartDialog, div#individualFiltering, div#manual, div#variantDetailPanel, div#fjBytesPanel, div#genomeBrowserPanel div#igvPanel {
     overflow: hidden;
 	width: 99%;
     margin: 0 auto;
 }
 
-div#density * {
+div#chartDialog * {
 	font-size:11px;
 }
 
@@ -164,7 +183,7 @@ div#termsOfUse .modal-lg {
     width: 950px;
 }
 
-div#density .modal-lg, div#individualFiltering .modal-lg, div#manual .modal-lg, div#variantDetailPanel .modal-lg, div#fjBytesPanel .modal-lg, div#genomeBrowserPanel .modal-lg, div#igvPanel .modal-lg {
+div#chartDialog .modal-lg, div#individualFiltering .modal-lg, div#manual .modal-lg, div#variantDetailPanel .modal-lg, div#fjBytesPanel .modal-lg, div#genomeBrowserPanel .modal-lg, div#igvPanel .modal-lg {
     width: 99%;
 }
 
@@ -172,7 +191,7 @@ div.graphCustomization {
 	min-height:90px;
 }
 
-div#density div.graphCustomization p {
+div#chartDialog div.graphCustomization p {
 	font-size:12px;
 	font-weight:bold;
 	margin-bottom:5px;
@@ -235,7 +254,19 @@ form#importDropzone .form-group {
 }
 
 .dropzone .dz-default.dz-message {
-	height:142px;
+	height:auto;
+	padding:5px;
+}
+
+#dropZonePreviewsMD > div > div.dz-error-message > span {
+    font-size: 12px;
+    width: 540px;
+    display: inline-block;
+    word-break: break-word;
+    white-space: normal;
+    margin-left: -370px;
+    text-align: center;
+    margin-top: 10px;
 }
 
 .dropzone .dz-default.dz-message[disabled], .dropzone .dz-default.dz-message[disabled] * {
@@ -268,11 +299,10 @@ form#importDropzone .form-group {
     white-space: nowrap;
 }
 
-div#Sequences, div#Individuals1, div#Individuals2 {
+div#Sequences, .indListBox {
 	padding-right:110px;
 	width:100%;
 }
-
 .dropdown-toggle {
     padding:3px 15px;
     width:100%;
@@ -447,8 +477,12 @@ div#advancedFilterDiv label#genotypeQualityThresholdLabel, div#advancedFilterDiv
     right:8px;
 }
 
-div#VariantIds .bootstrap-select.btn-group .dropdown-menu {
-	min-width:150px;
+div#VariantIds .bootstrap-select.btn-group .dropdown-menu{
+	min-width:220px;
+}
+
+div#GeneIds .bootstrap-select.btn-group .dropdown-menu{
+	min-width:220px;
 }
 
 .bootstrap-select div.status {
@@ -460,8 +494,8 @@ div#exportPanel select[multiple] option {
 }
 
 div#serverExportBox {
-	min-width: 580px;
-	right: 266px;
+	min-width: 500px;
+	right: 512px;
 	margin-top: 28px;
 	padding: 5px;
 }
@@ -510,6 +544,10 @@ div.allele {
     display:inline-block;
     font-size:10px;
 }
+div.refAllele, span.refAllele {
+	background-color:#bbffbb;
+}
+
 body{
     height:100%;  
 }
@@ -672,18 +710,6 @@ div#variantDetailPanel thead th {
     box-shadow:2px 2px 3px #000; 
 }
 
-.group1 {
-    background-color:#bcd4f2;
-}
-
-.group2 {
-    background-color:#efecb1;
-}
-
-.groups1and2 {
-	background: repeating-linear-gradient(to right, #bcd4f2, #bcd4f2 10px, #efecb1 10px, #efecb1 20px);
-}
-
 table#individualFilteringTable th {
 	padding:3px;
 	border-left:1px solid white;
@@ -748,6 +774,10 @@ table#individualFilteringTable td {
     margin-right:10px; 
 }
 
+.padding {
+	padding: 8px;
+}
+
 .padding-bottom {
     padding-bottom:10px;
 }
@@ -770,7 +800,7 @@ table#individualFilteringTable td {
     padding: 3px 6px;
 }
 
-table.genotypeTable>tbody>tr>th {
+table#genotypeTable>tbody>tr>th {
 	padding:2px;
 }
 
@@ -782,7 +812,7 @@ div#navigationDiv {
 	width:190px;
 	position:absolute;
 	margin-top:-5px;
-	right:343px;
+	right:360px;
 	background-image:radial-gradient(#2fa4e7, white);
 }
 
@@ -810,6 +840,7 @@ pre {
 }
 
 div#currentPage {
+	margin-top:5px;
     font-size:13px;
     font-weight:bold;
 }
@@ -892,6 +923,22 @@ div#countResultPanel {
 
 input:focus::placeholder {
   color: transparent;
+}
+
+.d-flex {
+	display: flex;
+}
+
+.flex-row {
+	flex-direction: row;
+}
+
+.flex-column {
+	flex-direction: column;
+}
+
+.justify-between {
+	justify-content: space-between;
 }
 
 @keyframes spin-a {
