@@ -27,19 +27,23 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.servlet.ServletContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+
+import fr.cirad.mgdb.model.mongo.maintypes.*;
+import fr.cirad.mgdb.model.mongo.subtypes.Callset;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -55,6 +59,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -63,28 +68,24 @@ import org.xml.sax.SAXException;
 
 import com.mongodb.BasicDBObject;
 
+import fr.cirad.manager.AbstractProcess;
 import fr.cirad.manager.IModuleManager;
 import fr.cirad.manager.dump.DumpMetadata;
 import fr.cirad.manager.dump.DumpProcess;
 import fr.cirad.manager.dump.DumpStatus;
-import fr.cirad.manager.dump.IBackgroundProcess;
+import fr.cirad.manager.ImportProcess;
 import fr.cirad.mgdb.importing.base.AbstractGenotypeImport;
-import fr.cirad.mgdb.model.mongo.maintypes.CachedCount;
-import fr.cirad.mgdb.model.mongo.maintypes.DBVCFHeader;
-import fr.cirad.mgdb.model.mongo.maintypes.DatabaseInformation;
-import fr.cirad.mgdb.model.mongo.maintypes.GenotypingProject;
-import fr.cirad.mgdb.model.mongo.maintypes.GenotypingSample;
-import fr.cirad.mgdb.model.mongo.maintypes.Individual;
-import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData;
-import fr.cirad.mgdb.model.mongo.maintypes.VariantRunData.VariantRunDataId;
 import fr.cirad.mgdb.model.mongodao.MgdbDao;
 import fr.cirad.security.ReloadableInMemoryDaoImpl;
 import fr.cirad.tools.mongo.MongoTemplateManager;
 import fr.cirad.tools.security.TokenManager;
 import fr.cirad.tools.security.base.AbstractTokenManager;
+import fr.cirad.web.controller.security.UserPermissionController;
 
 @Component
 public class GigwaModuleManager implements IModuleManager {
+
+    private Map<String, AbstractProcess> importProcesses = new ConcurrentHashMap<>();
 
     private static final Logger LOG = Logger.getLogger(GigwaModuleManager.class);
 
@@ -102,6 +103,11 @@ public class GigwaModuleManager implements IModuleManager {
     public String getModuleHost(String sModule) {
         return MongoTemplateManager.getModuleHost(sModule);
     }
+
+	@Override
+	public String getModuleCategory(String module) {
+		return Helper.nullToEmptyString(MongoTemplateManager.getTaxonId(module)) + ":" + Helper.nullToEmptyString(MongoTemplateManager.getTaxonName(module)) + ":" + Helper.nullToEmptyString(MongoTemplateManager.getSpecies(module));
+	}
 
     @Override
     public Collection<String> getModules(Boolean fTrueForPublicFalseForPrivateNullForBoth) {
@@ -122,22 +128,21 @@ public class GigwaModuleManager implements IModuleManager {
             if (fIncludeEntityDescriptions)
             	q.fields().include(GenotypingProject.FIELDNAME_DESCRIPTION);
 
-            for (String sModule : modules != null ? modules : MongoTemplateManager.getAvailableModules())
-                if (fTrueIfPublicFalseIfPrivateNullIfAny == null || (MongoTemplateManager.isModulePublic(sModule) == fTrueIfPublicFalseIfPrivateNullIfAny)) {
-                    Map<Comparable, String[]> moduleEntities = entitiesByModule.get(sModule);
-                    if (moduleEntities == null) {
-                        moduleEntities = new LinkedHashMap<>();
-                        entitiesByModule.put(sModule, moduleEntities);
-                    }
-
-                    for (GenotypingProject project : MongoTemplateManager.get(sModule).find(q, GenotypingProject.class)) {
-                    	String[] projectInfo = new String[fIncludeEntityDescriptions ? 2 : 1];
-                    	projectInfo[0] = project.getName();
-                    	if (fIncludeEntityDescriptions)
-                    		projectInfo[1] = project.getDescription();
-                        moduleEntities.put(project.getId(), projectInfo);
-                    }
+            for (String sModule : modules != null ? modules : MongoTemplateManager.getAvailableModules()) {
+                Map<Comparable, String[]> moduleEntities = entitiesByModule.get(sModule);
+                if (moduleEntities == null) {
+                    moduleEntities = new LinkedHashMap<>();
+                    entitiesByModule.put(sModule, moduleEntities);
                 }
+
+                for (GenotypingProject project : MongoTemplateManager.get(sModule).find(q, GenotypingProject.class)) {
+                	String[] projectInfo = new String[fIncludeEntityDescriptions ? 2 : 1];
+                	projectInfo[0] = project.getName();
+                	if (fIncludeEntityDescriptions)
+                		projectInfo[1] = project.getDescription();
+                    moduleEntities.put(project.getId(), projectInfo);
+                }
+            }
         }
         else
             throw new Exception("Not managing entities of type " + entityType);
@@ -165,7 +170,10 @@ public class GigwaModuleManager implements IModuleManager {
         		throw new Exception("Invalid project ID: " + parentEntityIDs[0]);
         	}
         }
-        else
+	    else if ("project.snpclust".equals(entityType)) {
+	    	subEntityIdToNameMap.put("snpclust", "https://www.google.com");
+	    }
+    	else
             throw new Exception("Not managing entities of type " + entityType);
 
         return subEntityIdToNameMap;
@@ -200,8 +208,8 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
-    public boolean createDataSource(String sModule, String sHost, String sSpeciesName, Long expiryDate) throws Exception {
-        return MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sModule, false, false, sHost, sSpeciesName, expiryDate);
+    public boolean createDataSource(String sModule, String sHost, Long expiryDate) throws Exception {
+        return MongoTemplateManager.saveOrUpdateDataSource(MongoTemplateManager.ModuleAction.CREATE, sModule, false, false, sHost, null, expiryDate);
     }
 
     @Override
@@ -211,95 +219,12 @@ public class GigwaModuleManager implements IModuleManager {
 
     @Override
     public boolean removeManagedEntity(String sModule, String sEntityType, Collection<Comparable> entityIDs) throws Exception {
-        if (AbstractTokenManager.ENTITY_PROJECT.equals(sEntityType)) {
-            final int nProjectIdToRemove = Integer.parseInt(entityIDs.iterator().next().toString());
-            MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
-            Query query = new Query();
-            query.fields().include("_id");
-            Collection<String> individualsInThisProject = null, individualsInOtherProjects = new ArrayList<>();
-            int nProjCount = 0;
-            for (GenotypingProject proj : mongoTemplate.find(query, GenotypingProject.class)) {
-                nProjCount++;
-                if (proj.getId() == nProjectIdToRemove)
-                    individualsInThisProject = MgdbDao.getProjectIndividuals(sModule, proj.getId());
-                else
-                    individualsInOtherProjects.addAll(MgdbDao.getProjectIndividuals(sModule, proj.getId()));
-            }
-            if (nProjCount == 1 && !individualsInThisProject.isEmpty()) {
-                mongoTemplate.getDb().drop();
-                LOG.info("Dropped database for module " + sModule + " instead of removing its only project");
-                return true;
-            }
-
-            long nRemovedSampleCount = mongoTemplate.remove(new Query(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), GenotypingSample.class).getDeletedCount();
-            LOG.info("Removed " + nRemovedSampleCount + " samples for project " + nProjectIdToRemove);
-
-            Collection<String> individualsToRemove = CollectionUtils.disjunction(individualsInThisProject, CollectionUtils.intersection(individualsInThisProject, individualsInOtherProjects));
-            long nRemovedIndCount = mongoTemplate.remove(new Query(Criteria.where("_id").in(individualsToRemove)), Individual.class).getDeletedCount();
-            if (nRemovedIndCount > 0)
-            	LOG.info("Removed " + nRemovedIndCount + " individuals out of " + individualsInThisProject.size());
-
-            if (mongoTemplate.remove(new Query(Criteria.where("_id").is(nProjectIdToRemove)), GenotypingProject.class).getDeletedCount() > 0)
-                LOG.info("Removed project " + nProjectIdToRemove + " from module " + sModule);
-            
-            long nDeletedVcfHeaders = mongoTemplate.remove(new Query(Criteria.where("_id." + DBVCFHeader.VcfHeaderId.FIELDNAME_PROJECT).is(nProjectIdToRemove)), DBVCFHeader.class).getDeletedCount();
-            if (nDeletedVcfHeaders > 0)
-                LOG.info("Removed " + nDeletedVcfHeaders + " vcf header(s) for project" + nProjectIdToRemove + " from module " + sModule);
-
-            new Thread() {
-                public void run() {
-                    long nRemovedVrdCount = mongoTemplate.remove(new Query(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(nProjectIdToRemove)), VariantRunData.class).getDeletedCount();
-                    LOG.info("Removed " + nRemovedVrdCount + " VRD records for project " + nProjectIdToRemove + " of module " + sModule);
-                }
-            }.start();
-            LOG.info("Launched async VRD cleanup for project " + nProjectIdToRemove + " of module " + sModule);
-
-            File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantSet.TMP_OUTPUT_FOLDER));
-            if (brapiV2ExportFolder.exists() && brapiV2ExportFolder.isDirectory())
-            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantSet.brapiV2ExportFilePrefix + sModule + Helper.ID_SEPARATOR + nProjectIdToRemove + Helper.ID_SEPARATOR)))
-            		if (exportFile.delete())
-            			LOG.info("Deleted BrAPI v2 VariantSet export file: " + exportFile);
-            
-            mongoTemplate.getCollection(mongoTemplate.getCollectionName(CachedCount.class)).drop();
-            MongoTemplateManager.updateDatabaseLastModification(sModule);
-            return true;
-        } else if (AbstractTokenManager.ENTITY_RUN.equals(sEntityType)) {
+        if (AbstractTokenManager.ENTITY_PROJECT.equals(sEntityType))
+            return MgdbDao.removeProjectAndRelatedRecords(sModule, Integer.parseInt(entityIDs.iterator().next().toString()));
+        else if (AbstractTokenManager.ENTITY_RUN.equals(sEntityType)) {
         	Iterator<Comparable> entityIdIterator = entityIDs.iterator();
         	final int nProjectId = Integer.parseInt(entityIdIterator.next().toString());
-        	final String sRun = (String) entityIdIterator.next();
-            MongoTemplate mongoTemplate = MongoTemplateManager.get(sModule);
-
-            long nRemovedSampleCount = mongoTemplate.remove(new Query(new Criteria().andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjectId), Criteria.where(GenotypingSample.FIELDNAME_RUN).is(sRun))), GenotypingSample.class).getDeletedCount();
-            LOG.info("Removed " + nRemovedSampleCount + " samples for project " + nProjectId + " of module " + sModule);
-
-            Collection<String> individualsWithSamples = mongoTemplate.findDistinct(new Query(), GenotypingSample.FIELDNAME_INDIVIDUAL,  GenotypingSample.class, String.class);
-            long nRemovedIndCount = mongoTemplate.remove(new Query(Criteria.where("_id").not().in(individualsWithSamples)), Individual.class).getDeletedCount();
-            if (nRemovedIndCount > 0)
-            	LOG.info("Removed " + nRemovedIndCount + " individuals from project " + nProjectId + " of module " + sModule);
-
-            if (mongoTemplate.updateFirst(new Query(Criteria.where("_id").is(nProjectId)), new Update().pull(GenotypingProject.FIELDNAME_RUNS, sRun), GenotypingProject.class).getModifiedCount() > 0)
-                LOG.info("Removed run " + sRun + " from project " + nProjectId + " of module " + sModule);
-
-            if (mongoTemplate.remove(new Query(new Criteria().andOperator(Criteria.where("_id." + DBVCFHeader.VcfHeaderId.FIELDNAME_PROJECT).is(nProjectId), Criteria.where("_id." + DBVCFHeader.VcfHeaderId.FIELDNAME_RUN).is(sRun))), DBVCFHeader.class).getDeletedCount() > 0)
-                LOG.info("Removed vcf header for run " + sRun + " in project " + nProjectId + " of module " + sModule);
-
-            new Thread() {
-                public void run() {
-                    long nRemovedVrdCount = mongoTemplate.remove(new Query(new Criteria().andOperator(Criteria.where("_id." + VariantRunDataId.FIELDNAME_PROJECT_ID).is(nProjectId), Criteria.where("_id." + VariantRunDataId.FIELDNAME_RUNNAME).is(sRun))), VariantRunData.class).getDeletedCount();
-                    LOG.info("Removed " + nRemovedVrdCount + " VRD records for project " + nProjectId + " of module " + sModule);
-                }
-            }.start();
-            LOG.info("Launched async VRD cleanup for run " + sRun + " in project " + nProjectId + " of module " + sModule);
-
-            File brapiV2ExportFolder = new File(servletContext.getRealPath(File.separator + VariantSet.TMP_OUTPUT_FOLDER));
-            if (brapiV2ExportFolder.exists() && brapiV2ExportFolder.isDirectory())
-            	for (File exportFile : brapiV2ExportFolder.listFiles(f -> f.getName().startsWith(VariantSet.brapiV2ExportFilePrefix + sModule + Helper.ID_SEPARATOR + nProjectId + Helper.ID_SEPARATOR)))
-            		if (exportFile.delete())
-            			LOG.info("Deleted BrAPI v2 VariantSet export file: " + exportFile);
-            
-            mongoTemplate.getCollection(mongoTemplate.getCollectionName(CachedCount.class)).drop();
-            MongoTemplateManager.updateDatabaseLastModification(sModule);
-            return true;
+        	return MgdbDao.removeRunAndRelatedRecords(sModule, nProjectId, (String) entityIdIterator.next());
         } else
             throw new Exception("Not managing entities of type " + sEntityType);
     }
@@ -346,40 +271,76 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
+    public String getTermsToAcceptToMakeModulePublic() {
+    	return appConfig.get("termsToAcceptToMakeDatabasePublic");
+    }
+
+    @Override
     public String getActionRequiredToEnableDumps() {
         if (actionRequiredToEnableDumps == null) {
             String dumpFolder = appConfig.get("dumpFolder");
             if (dumpFolder == null)
                 actionRequiredToEnableDumps = "specify a value for dumpFolder in config.properties (webapp should reload automatically)";
-            else if (Files.isDirectory(Paths.get(dumpFolder))) {
+            else {
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                Future<Boolean> future = executor.submit(new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() throws Exception {
+                        return Files.isDirectory(Paths.get(dumpFolder));
+                    }
+                });
+
+                boolean isDirectory;
                 try {
-                    String commandPrefix = System.getProperty("os.name").toLowerCase().startsWith("win") ? "cmd.exe /c " : "";
-
-                    Process p = Runtime.getRuntime().exec(commandPrefix + "mongodump --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
-                    Charset defaultCharset = java.nio.charset.Charset.defaultCharset();
-                    IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
-                    String stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
-                    if (!stdErr.isEmpty())
-                        throw new IOException(stdErr);
-
-                    p = Runtime.getRuntime().exec(commandPrefix + "mongorestore --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
-                    IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
-                    stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
-                    if (!stdErr.isEmpty())
-                        throw new IOException(stdErr);
-
-                    actionRequiredToEnableDumps = ""; // all seems OK
-                } catch (IOException ioe) {
-                    LOG.error("error checking for mongodump presence: " + ioe.getMessage());
-                    actionRequiredToEnableDumps = "install MongoDB Command Line Database Tools (then restart application-server)";
+                    isDirectory = future.get(10, TimeUnit.SECONDS); // Timeout after 10 seconds
+                } catch (TimeoutException e) {
+                    future.cancel(true); // Cancel the task if it times out
+                    LOG.error("Timeout while checking if dumpFolder is a directory: " + e.getMessage());
+                    actionRequiredToEnableDumps = "Make sure the value configured as dumpFolder points to a valid directory: " + dumpFolder;
+                    return actionRequiredToEnableDumps;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); // Restore interrupted status
+                    LOG.error("Interrupted while checking if dumpFolder is a directory: " + e.getMessage());
+                    actionRequiredToEnableDumps = "Make sure the value configured as dumpFolder points to a valid directory: " + dumpFolder;
+                    return actionRequiredToEnableDumps;
+                } catch (ExecutionException e) {
+                    LOG.error("Error while checking if dumpFolder is a directory: " + e.getCause().getMessage());
+                    actionRequiredToEnableDumps = "Make sure the value configured as dumpFolder points to a valid directory: " + dumpFolder;
+                    return actionRequiredToEnableDumps;
+                } finally {
+                    executor.shutdownNow();
                 }
+
+                if (isDirectory) {
+                    try {
+                        String commandPrefix = System.getProperty("os.name").toLowerCase().startsWith("win") ? "cmd.exe /c " : "";
+
+                        Process p = Runtime.getRuntime().exec(commandPrefix + "mongodump --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
+                        Charset defaultCharset = java.nio.charset.Charset.defaultCharset();
+                        IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
+                        String stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
+                        if (!stdErr.isEmpty())
+                            throw new IOException(stdErr);
+
+                        p = Runtime.getRuntime().exec(commandPrefix + "mongorestore --help"); // will throw an exception if command is not on the path if running Linux (but not if running Windows)
+                        IOUtils.toString(p.getInputStream(), defaultCharset); // necessary otherwise the Thread hangs...
+                        stdErr = IOUtils.toString(p.getErrorStream(), defaultCharset);
+                        if (!stdErr.isEmpty())
+                            throw new IOException(stdErr);
+
+                        actionRequiredToEnableDumps = ""; // all seems OK
+                    } catch (IOException ioe) {
+                        LOG.error("error checking for mongodump presence: " + ioe.getMessage());
+                        actionRequiredToEnableDumps = "install MongoDB Command Line Database Tools (then restart application-server)";
+                    }
+                }
+                else
+                    actionRequiredToEnableDumps = new File(dumpFolder).mkdirs() ? "" : "grant app-server write permissions on folder " + dumpFolder + " (then reload webapp)";
             }
-            else
-                actionRequiredToEnableDumps = new File(dumpFolder).mkdirs() ? "" : "grant app-server write permissions on folder " + dumpFolder + " (then reload webapp)";
         }
         return actionRequiredToEnableDumps;
     }
-
+    
     @Override
     public List<DumpMetadata> getDumps(String sModule) {
         return getDumps(sModule, true);
@@ -389,7 +350,29 @@ public class GigwaModuleManager implements IModuleManager {
         String dumpPath = this.getDumpPath(sModule);
 
         // List files in the database's dump directory, filter out subdirectories and logs
-        File[] fileList = new File(dumpPath).listFiles();
+        File[] fileList = null;
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<File[]> future = executor.submit(new Callable<File[]>() {
+            @Override
+            public File[] call() throws Exception {
+            	return new File(dumpPath).listFiles();
+            }
+        });
+
+        try {
+        	fileList = future.get(5, TimeUnit.SECONDS); // Timeout after 5 seconds
+        } catch (TimeoutException e) {
+            future.cancel(true); // Cancel the task if it times out
+            LOG.error("Timeout while listing dump files for database " + sModule + ": " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Restore interrupted status
+            LOG.error("Interrupted while listing dump files for database " + sModule + ": " + e.getMessage());
+        } catch (ExecutionException e) {
+            LOG.error("Error while listing dump files for database " + sModule + ": " + e.getCause().getMessage());
+        } finally {
+            executor.shutdownNow();
+        }
+
         ArrayList<DumpMetadata> result = new ArrayList<DumpMetadata>();
         if (fileList != null) {
             DatabaseInformation dbInfo = MongoTemplateManager.getDatabaseInformation(sModule);
@@ -463,7 +446,7 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
-    public IBackgroundProcess startDump(String sModule, String dumpName, String sDescription) {
+    public AbstractProcess startDump(String sModule, String dumpName, String sDescription) {
         String sHost = this.getModuleHost(sModule);
         String credentials = this.getHostCredentials(sHost);
         String databaseName = MongoTemplateManager.getDatabaseName(sModule);
@@ -488,7 +471,7 @@ public class GigwaModuleManager implements IModuleManager {
     }
 
     @Override
-    public IBackgroundProcess startRestore(String sModule, String dumpId, boolean drop) {
+    public AbstractProcess startRestore(String sModule, String dumpId, boolean drop) {
         String sHost = this.getModuleHost(sModule);
         String credentials = this.getHostCredentials(sHost);
         String dumpFile = this.getDumpPath(sModule) + File.separator + dumpId + ".gz";
@@ -642,21 +625,29 @@ public class GigwaModuleManager implements IModuleManager {
         	VariantSet variantSet = mongoTemplate.findById(Helper.createId(sModule, nProjId, sRun), VariantSet.class, VariantSet.BRAPI_CACHE_COLL_VARIANTSET);
         	if (variantSet != null)
         		return variantSet.getCallSetCount() + " samples, " + variantSet.getVariantCount() + " variants";
-        	else {
-                Query q = new Query(Criteria.where("_id").is(nProjId));
-                q.with(Sort.by(Arrays.asList(new Sort.Order(Sort.Direction.ASC, "_id"))));
-                q.fields().include(GenotypingProject.FIELDNAME_DESCRIPTION);
-                return (int) mongoTemplate.count(new Query(new Criteria().andOperator(Criteria.where(GenotypingSample.FIELDNAME_PROJECT_ID).is(nProjId), Criteria.where(GenotypingSample.FIELDNAME_RUN).is(sRun))), GenotypingSample.class) + " samples";
-
-            }
+        	else
+                return mongoTemplate.findDistinct(new Query(new Criteria().andOperator(Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + Callset.FIELDNAME_PROJECT_ID).is(nProjId), Criteria.where(GenotypingSample.FIELDNAME_CALLSETS + "." + Callset.FIELDNAME_RUN).is(sRun))), GenotypingSample.FIELDNAME_CALLSETS + "." + "_id", GenotypingSample.class, Integer.class).size() + " callsets";
         }
         else
         	throw new Exception("Not managing entities of type " + entityType);
 	}
 	
+
 	@Override
-	public boolean doesEntityTypeSupportDescription(String sModule, String sEntityType) {
-		return true;
+	public String getEntityAdditionURL(String sEntityType) {
+		return null;	// not supported for any entity type
+	}
+	
+	@Override
+	public String getEntityEditionURL(String sEntityType) {
+		return null;	// not supported for any entity type
+	}
+	
+	@Override
+	public boolean isInlineDescriptionUpdateSupportedForEntity(String sEntityType) {
+		if (AbstractTokenManager.ENTITY_PROJECT.equals(sEntityType))
+			return true;
+		return false;
 	}
 
 	@Override
@@ -677,5 +668,32 @@ public class GigwaModuleManager implements IModuleManager {
 		}
 
 		throw new Exception("Not managing entities of type " + sEntityType);
+	}
+	
+    @Override
+	public Collection<? extends String> getLevel1Roles(String level1Type, ResourceBundle bundle) {
+		List<String> result = new ArrayList<>();
+		for (String role : StringUtils.tokenizeToStringArray(bundle.getString(UserPermissionController.LEVEL1_ROLES + "_" + level1Type), ","))
+			if (!role.equals(AbstractTokenManager.ENTITY_SNPCLUST_EDITOR_ROLE) || appConfig.get("snpclustLink") != null)
+				result.add(role);
+		return result;
+	}
+	
+	public void registerImportProcess(ImportProcess process) {
+		importProcesses.put(process.getProcessID(), process);
+	}
+
+    @Override
+    public Map<String, AbstractProcess> getImportProcesses() {
+        return importProcesses;
+    }
+
+	public void cleanupCompleteImportProcesses() {
+		for (String processID : importProcesses.keySet()) {
+			AbstractProcess process = importProcesses.get(processID);
+			if (process.getStatus().isFinal()) {
+				importProcesses.remove(processID);
+			}
+		}
 	}
 }
